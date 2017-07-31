@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.callbacks import ModelCheckpoint
+import keras.backend as KB
 
 TOTAL_DATASET_SIZE = 10887
 TRAIN_SIZE = 10000 #Total dataset size is 10887
@@ -105,6 +106,9 @@ def get_day_of_week_reg(day_of_week):
 def get_day_of_week_cas(day_of_week):
     return days_of_week_cas[int(day_of_week)]
 
+def rmsle(y_true, y_pred):
+    return KB.sqrt(KB.mean(KB.square(KB.log(y_pred+1) - KB.log(y_true+1)), axis=-1))
+
 df = pd.read_csv('data/train.csv')
 df_to_predict = pd.read_csv('data/test.csv')
 
@@ -139,6 +143,7 @@ df_to_predict['day_of_week_cas'] = df_to_predict.day_of_week.apply(get_day_of_we
 hours_impact = np.array(df.groupby('hour')['count'].mean())
 hours_cas = np.array(df.groupby('hour')['casual'].mean())
 hours_reg = np.array(df.groupby('hour')['registered'].mean())
+months_impact = np.array(df.groupby('month')['count'].mean())
 # hour_peak_ = np.array(df.groupby('hour')['diff'].mean())
 # hour_slope_ = np.array(df.groupby('hour')['casual'].mean())
 
@@ -211,19 +216,21 @@ test_setY = np.array(test_setY)
 
 #Defining our NN model
 model = Sequential()
-model.add(Dense(units=55, input_dim=11))
+model.add(Dense(units=9, input_dim=11))
 model.add(Activation("tanh"))
-model.add(Dense(units=33))
+model.add(Dense(units=9))
 model.add(Activation("tanh"))
-model.add(Dense(units=11))
+model.add(Dense(units=9))
+model.add(Activation("tanh"))
+model.add(Dense(units=9))
 model.add(Activation("tanh"))
 model.add(Dense(units=3))
 model.add(Activation("relu"))
-model.compile(loss='mean_squared_error', optimizer='adam')
+model.compile(loss=rmsle, optimizer='adam')
 #model.compile(loss='mse', optimizer=SGD(lr=0.01, momentum=0.9, nesterov=True))
 checkpoint = ModelCheckpoint('best_weights.hdf5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
-history_callback = model.fit(train_setX, train_setY, epochs=1000, batch_size=50,validation_split=0.1,verbose=2,callbacks=callbacks_list)
+history_callback = model.fit(train_setX, train_setY, epochs=5000, batch_size=50,validation_split=0.2,verbose=2,callbacks=callbacks_list)
 loss_history = history_callback.history["loss"]
 val_loss_history = history_callback.history["val_loss"]
 #model.load_weights('best_weights.hdf5')
