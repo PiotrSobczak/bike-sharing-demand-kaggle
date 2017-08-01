@@ -55,21 +55,23 @@ def get_day_of_week(datetime):
     day_of_week = day_of_week*31*np.pi/(6*18) #Refactoring day_of_week from 0-6 to 0-(31/18*PI) to make it possible to place days of week on circle
     return day_of_week
 
-def get_humidity_impact(real_humidity):
-    if(real_humidity >17):
-        return real_humidity
+def get_humidity_impact(humidity):
+    lin_part = [400 - 3.5 * i for i in range(101)]
+    quad_part = [30 + 0.8 * x ** 2 for x in range(20)]
+    if humidity < 20:
+        return quad_part[humidity]
     else:
-        return 100-real_humidity
+        return lin_part[humidity]
+
+def get_month(datetime):
+    date, _ = datetime.split(' ')
+    _,month,_ = date.split('-') #['yyyy', 'mm', 'dd']
+    return int(month)
 
 def get_month_impact(datetime):
     date, _ = datetime.split(' ')
     _,month,_ = date.split('-') #['yyyy', 'mm', 'dd']
-    month=int(month)
-    if month > 6 and month <= 10:
-        month = 6
-    elif month > 10:
-        month = 6 - (month - 10)
-    return month
+    return months_impact[int(month)-1]
 
 def get_hour_impact(datetime):
     _, time = datetime.split(' ')
@@ -107,7 +109,7 @@ def get_day_of_week_cas(day_of_week):
     return days_of_week_cas[int(day_of_week)]
 
 def rmsle(y_true, y_pred):
-    return KB.sqrt(KB.mean(KB.square(KB.log(y_pred+1) - KB.log(y_true+1)), axis=-1))
+    return KB.sqrt(KB.mean(KB.square(KB.log(y_pred+1) - KB.log(y_true+1)), axis=0))
 
 df = pd.read_csv('data/train.csv')
 df_to_predict = pd.read_csv('data/test.csv')
@@ -121,8 +123,15 @@ df['hour'] = df.datetime.apply(get_hour)
 #df_to_predict['hour'] = df_to_predict.datetime.apply(get_hour)
 
 #Little refactor of humidity to make it more linear
+humidity_impact = np.array(df.groupby('humidity')['count'].mean())
+
+#a = df.groupby('humidity')['count'].mean().plot()
+#a.legend()
+
 df['humidity'] = df.humidity.apply(get_humidity_impact)
 df_to_predict['humidity'] = df_to_predict.humidity.apply(get_humidity_impact)
+df['month'] = df.datetime.apply(get_month)
+months_impact = np.array(df.groupby('month')['count'].mean())
 
 #Getting month impact, which tells us how good is the month for bikes, far better than 'season'
 df['month_impact'] = df.datetime.apply(get_month_impact)
@@ -143,7 +152,7 @@ df_to_predict['day_of_week_cas'] = df_to_predict.day_of_week.apply(get_day_of_we
 hours_impact = np.array(df.groupby('hour')['count'].mean())
 hours_cas = np.array(df.groupby('hour')['casual'].mean())
 hours_reg = np.array(df.groupby('hour')['registered'].mean())
-months_impact = np.array(df.groupby('month')['count'].mean())
+
 # hour_peak_ = np.array(df.groupby('hour')['diff'].mean())
 # hour_slope_ = np.array(df.groupby('hour')['casual'].mean())
 
@@ -176,10 +185,10 @@ df['diff'] = df['registered_norm']-df['casual_norm']
 df = df.sample(frac=1).reset_index(drop=True)
 
 #Spitting data into input features and labels
-datasetY = df.ix[:,'casual':'count']
-#datasetY = df.ix[:,'count']
+#datasetY = df.ix[:,'casual':'count']
+datasetY = df.ix[:,'count']
 #datasetX = df.drop(['casual','registered','count','datetime','windspeed','atemp','season','diff','registered_norm','casual_norm'],1)
-datasetX = df.drop(['casual','registered','count','datetime','windspeed','atemp','season','diff','registered_norm','casual_norm','hour','day_of_week'],1)
+datasetX = df.drop(['casual','registered','count','datetime','windspeed','atemp','season','diff','registered_norm','casual_norm','hour','day_of_week','month'],1)
 datasetX_pred = df_to_predict.drop(['datetime','windspeed','atemp','season','day_of_week'],1)
 print(datasetY.head(10))
 
@@ -224,13 +233,13 @@ model.add(Dense(units=9))
 model.add(Activation("tanh"))
 model.add(Dense(units=9))
 model.add(Activation("tanh"))
-model.add(Dense(units=3))
+model.add(Dense(units=1))
 model.add(Activation("relu"))
 model.compile(loss=rmsle, optimizer='adam')
 #model.compile(loss='mse', optimizer=SGD(lr=0.01, momentum=0.9, nesterov=True))
 checkpoint = ModelCheckpoint('best_weights.hdf5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
-history_callback = model.fit(train_setX, train_setY, epochs=5000, batch_size=50,validation_split=0.2,verbose=2,callbacks=callbacks_list)
+history_callback = model.fit(train_setX, train_setY, epochs=20000, batch_size=50,validation_split=0.2,verbose=2,callbacks=callbacks_list)
 loss_history = history_callback.history["loss"]
 val_loss_history = history_callback.history["val_loss"]
 #model.load_weights('best_weights.hdf5')
