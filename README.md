@@ -1,4 +1,5 @@
 # BikeSharingDemand-Kaggle-ML-competition
+https://www.kaggle.com/c/bike-sharing-demand </br>
 My solution of Kaggle's Bike Sharing Demand ML competition using neaural network.</br>
 Current score: 25th percentile </br></br>
 Some interesting plots:</br>
