@@ -5,22 +5,15 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.callbacks import ModelCheckpoint
 import keras.backend as KB
+from keras.layers import Dropout
 
 TOTAL_DATASET_SIZE = 10887
-TRAIN_SIZE = 10000 #Total dataset size is 10887
-TEST_SIZE = TOTAL_DATASET_SIZE - TRAIN_SIZE
 
 HOURS_IN_DAY = 24
 START_YEAR = 2011
 DAYS_IN_YEAR = 365
 MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 MONTHS_IN_YEAR = 12
-
-hour_slope=[]
-hour_peak=[]
-hours_impact=[]
-#hours_reg=[]
-#hours_cas=[]
 
 def get_total_day_count(datetime):
     date,time = datetime.split(' ')
@@ -80,14 +73,13 @@ def get_hour_impact(datetime):
     return hours_impact[int(hour)]
 
 def get_hour_slope(datetime):
-    #hour_slope = [-0.76,7,5,3,1,1,4,11,22,31,46,60,69,74,77,76,75,75,61,49,37,29,23,15]
+    hour_slope = [-0.76,7,5,3,1,1,4,11,22,31,46,60,69,74,77,76,75,75,61,49,37,29,23,15]
     _, time = datetime.split(' ')
     hour,_,_ = time.split(':')  # ['hh', 'mm', 'ss']
     return hour_slope[int(hour)]
 
 def get_hour_peak(datetime):
-    #hour_peak = [35,21,13,6,4,17,68,191,320,160,83,91,119,110,90,102,166,318,308,217,155,116,88,59]
-    hour_peak=[-0.7,-0.8,-0.9,-0.95,-1,-0.8,-0.4, 0.4, 1, -0.2, -0.8, -0.6, -0.5, -0.5, -0.6, -0.8, 0.2, 1, 1, 0.5, 0.1,-0.2, -0.4, -0.5,-0.6]
+    hour_peak = [35,21,13,6,4,17,68,191,320,160,83,91,119,110,90,102,166,318,308,217,155,116,88,59]
     _, time = datetime.split(' ')
     hour,_,_ = time.split(':')  # ['hh', 'mm', 'ss']
     return hour_peak[int(hour)]
@@ -128,11 +120,8 @@ def get_day_of_week_reg(day_of_week):
 def get_day_of_week_cas(day_of_week):
     return days_of_week_cas[int(day_of_week)]
 
-# def rmsle(y_true, y_pred):
-#     return KB.sqrt(KB.mean(KB.square(KB.log(y_pred+1) - KB.log(y_true+1)), axis=-1))
-
 def rmsle(y_true, y_pred):
-    return KB.sqrt(KB.mean(KB.square(KB.log(y_pred+1) - KB.log(y_true+1)), axis=0))
+    return KB.sqrt(KB.mean(KB.square(KB.log(y_pred+1) - KB.log(y_true+1)), axis=-1))
 
 def norm_arr(array):
     return (array - array.min() - (array.max() - array.min()) / 2) / ((array.max() - array.min()) / 2)
@@ -142,6 +131,7 @@ def get_year(datetime):
     year,_,_ = date.split('-') #['yyyy', 'mm', 'dd']
     return int(year)
 
+#Reading datasets
 df = pd.read_csv('data/train.csv')
 df_to_predict = pd.read_csv('data/test.csv')
 
@@ -153,104 +143,60 @@ df_to_predict['cont_time'] = df_to_predict.datetime.apply(datetime_to_total_hour
 df['hour'] = df.datetime.apply(get_hour)
 df_to_predict['hour'] = df_to_predict.datetime.apply(get_hour)
 
-#Little refactor of humidity to make it more linear
+#Little refactor of humidity to make it easier to learn
 humidity_impact = np.array(df.groupby('humidity')['count'].mean())
 
-#a = df.groupby('humidity')['count'].mean().plot()
-#a.legend()
-
-df['humidity'] = df.humidity.apply(get_humidity_impact)
-df_to_predict['humidity'] = df_to_predict.humidity.apply(get_humidity_impact)
+#Month
 df['month'] = df.datetime.apply(get_month)
-months_impact = np.array(df.groupby('month')['count'].mean())
 
-#Getting month impact, which tells us how good is the month for bikes, far better than 'season'
+#Getting month impact, which tells us how good is the month for bikes, far better than 'season' and is easier to learn than pure month value
+months_impact = np.array(df.groupby('month')['count'].mean())
 df['month_impact'] = df.datetime.apply(get_month_impact)
 df_to_predict['month_impact'] = df_to_predict.datetime.apply(get_month_impact)
-#df_without_outliners = df[np.abs(df["count"]-df["count"].mean())<=(3*df["count"].std())]
 
 #Year
 df['year'] = df.datetime.apply(get_year)
 df_to_predict['year'] = df_to_predict.datetime.apply(get_year)
 
+#Day of week
 df['day_of_week'] = df.datetime.apply(get_day_of_week)
 df_to_predict['day_of_week'] = df_to_predict.datetime.apply(get_day_of_week)
 
+#DAY OF WEEK REG/CAS
 days_of_week_reg = np.array(df.groupby('day_of_week')['registered'].mean())
 days_of_week_cas = np.array(df.groupby('day_of_week')['casual'].mean())
-
 df['day_of_week_reg'] = df.day_of_week.apply(get_day_of_week_reg)
 df['day_of_week_cas'] = df.day_of_week.apply(get_day_of_week_cas)
 df_to_predict['day_of_week_reg'] = df_to_predict.day_of_week.apply(get_day_of_week_reg)
 df_to_predict['day_of_week_cas'] = df_to_predict.day_of_week.apply(get_day_of_week_cas)
 
+#Hour impact array
 hours_impact = np.array(df.groupby('hour')['count'].mean())
+
+#Hour impact arrays for registered and casual
 hours_cas = np.array(df.groupby('hour')['casual'].mean())
 hours_reg = np.array(df.groupby('hour')['registered'].mean())
 
-# hour_peak_ = np.array(df.groupby('hour')['diff'].mean())
-# hour_slope_ = np.array(df.groupby('hour')['casual'].mean())
-
-#Hour impact for registered and casual
-#
-print(df.head(10))
-#Hour impact based on workingday
+#Hour impact arrays for workingday, freeday, sat, sun
 hours_workday = norm_arr(df.loc[df['workingday'] == 1].groupby('hour')['count'].mean())
 hours_freeday = norm_arr(df.loc[(df['workingday'] == 0) & (df['day_of_week'] < 5)].groupby('hour')['count'].mean())
 hours_sat = norm_arr(df.loc[df['day_of_week'] == 5].groupby('hour')['count'].mean())
 hours_sun = norm_arr(df.loc[df['day_of_week'] == 6].groupby('hour')['count'].mean())
-#datasetX.loc[df.day_of_week != 5, 'hours_sat']
 
-
-# df['hour_impact'] = df.loc[df['workingday'] == 1.0].datetime.apply(get_hour_work)
-# df.loc[(df['workingday'] == 0) & (df['day_of_week'] < 5), 'hour_impact'] = df.loc[(df['workingday'] == 0) & (df['day_of_week'] < 5)].datetime.apply(get_hour_free)
-# df.loc[df['day_of_week'] == 5,'hour_impact'] = df.loc[df['day_of_week'] == 5].datetime.apply(get_hour_sat)
-# df.loc[df['day_of_week'] == 6,'hour_impact'] = df.loc[df['day_of_week'] == 6].datetime.apply(get_hour_sun)
-# df_to_predict['hour_impact'] = df_to_predict.loc[df_to_predict['workingday'] == 1.0].datetime.apply(get_hour_work)
-# df_to_predict.loc[(df_to_predict['workingday'] == 0) & (df_to_predict['day_of_week'] < 5), 'hour_impact'] = df_to_predict.loc[(df_to_predict['workingday'] == 0) & (df_to_predict['day_of_week'] < 5)].datetime.apply(get_hour_free)
-# df_to_predict.loc[df_to_predict['day_of_week'] == 5,'hour_impact'] = df_to_predict.loc[df_to_predict['day_of_week'] == 5].datetime.apply(get_hour_sat)
-# df_to_predict.loc[df_to_predict['day_of_week'] == 6,'hour_impact'] = df_to_predict.loc[df_to_predict['day_of_week'] == 6].datetime.apply(get_hour_sun)
-
-my_df = df.ix[:,['datetime','day_of_week','workingday','hour_impact']]
-my_df.to_csv('myDF.csv')
-print("My DF:",my_df.head(10))
-# df['hours_work'] = df.datetime.apply(get_hour_work)
-# df_to_predict['hours_work'] = df_to_predict.datetime.apply(get_hour_work)
-# df['hours_sat'] = df.datetime.apply(get_hour_sat)
-# df_to_predict['hours_sat'] = df_to_predict.datetime.apply(get_hour_sat)
-# df['hours_sun'] = df.datetime.apply(get_hour_sun)
-# df_to_predict['hours_sun'] = df_to_predict.datetime.apply(get_hour_sun)
-# df['hours_free'] = df.datetime.apply(get_hour_free)
-# df_to_predict['hours_free'] = df_to_predict.datetime.apply(get_hour_free)
-#Hour impact for count
-#df['hour_impact'] = df.datetime.apply(get_hour_impact)
-#df_to_predict['hour_impact'] = df_to_predict.datetime.apply(get_hour_impact)
-#Hour peak & slope _/\_/|_ and _--_
-#df['hour_peak'] = df.datetime.apply(get_hour_peak)
-#df['hour_slope'] = df.datetime.apply(get_hour_slope)
-#df_to_predict['hour_peak'] = df_to_predict.datetime.apply(get_hour_peak)
-#df_to_predict['hour_slope'] = df_to_predict.datetime.apply(get_hour_slope)
-
-#hours_impact = np.array(df_without_outliners.groupby('hour')['count'].mean())
-
-df['registered_norm'] = (df['registered'] - df['registered'].min() - (df['registered'].max() - df['registered'].min())/2) / ((df['registered'].max() - df['registered'].min())/2)
-df['casual_norm'] = (df['casual'] - df['casual'].min() - (df['casual'].max() - df['casual'].min())/2) / ((df['casual'].max() - df['casual'].min())/2)
-df['diff'] = df['registered_norm']-df['casual_norm']
-
-
-# hour_peak = (hour_peak_ - hour_peak_.min() - (hour_peak_.max() - hour_peak_.min())/2) / ((hour_peak_.max() - hour_peak_.min())/2)
-# hour_slope = (hour_slope_ - hour_slope_.min() - (hour_slope_.max() - hour_slope_.min())/2) / ((hour_slope_.max() - hour_slope_.min())/2)
+#Hour impact for registered and casual
+df['hour_reg'] = df.datetime.apply(get_hour_registered)
+df['hour_cas'] = df.datetime.apply(get_hour_casual)
+df_to_predict['hour_reg'] = df_to_predict.datetime.apply(get_hour_registered)
+df_to_predict['hour_cas'] = df_to_predict.datetime.apply(get_hour_casual)
+print(df.head(10))
 
 #Data randomization(shuffling)
 df = df.sample(frac=1).reset_index(drop=True)
-
 print(df.head(30))
+
 #Spitting data into input features and labels
-#datasetY = df.ix[:,'casual':'count']
-#datasetY.head(10)
-datasetY = df.ix[:,'count']
-#datasetX = df.drop(['casual','registered','count','datetime','windspeed','atemp','season','diff','registered_norm','casual_norm'],1)
-datasetX = df.drop(['casual','registered','count','datetime','windspeed','atemp','season','diff','registered_norm','casual_norm','month'],1)
+datasetY = df.ix[:,'casual':'count']
+datasetX = df.drop(['casual','registered','count','datetime','windspeed','atemp','season','month'],1)
 datasetX_pred = df_to_predict.drop(['datetime','windspeed','atemp','season'],1)
 print(datasetY.head(10))
 
@@ -258,73 +204,60 @@ print(datasetY.head(10))
 datasetX = (datasetX - datasetX.min() - (datasetX.max() - datasetX.min())/2) / ((datasetX.max() - datasetX.min())/2)
 datasetX_pred = (datasetX_pred - datasetX_pred.min() - (datasetX_pred.max() - datasetX_pred.min())/2) / ((datasetX_pred.max() - datasetX_pred.min())/2)
 
-# datasetX.loc[df.workingday == 0, 'hours_work'] = 0
-# datasetX.loc[df.day_of_week != 5, 'hours_sat'] = 0
-# datasetX.loc[df.day_of_week != 6, 'hours_sun'] = 0
-# datasetX_pred.loc[df_to_predict.workingday == 0, 'hours_work'] = 0
-# datasetX_pred.loc[df_to_predict.day_of_week != 5, 'hours_sat'] = 0
-# datasetX_pred.loc[df_to_predict.day_of_week != 6, 'hours_sun'] = 0
-# datasetX.loc[(df.workingday == 1) | (df.day_of_week > 4), 'hours_free'] = 0
-# datasetX_pred.loc[(df_to_predict.workingday == 1) | (df_to_predict.day_of_week > 4), 'hours_free'] = 0
-
-# datasetX_pred.loc[datasetX_pred.workingday == 0, 'hours_work'] = 0
-
 datasetX = datasetX.drop(['day_of_week'],1)
 datasetX_pred = datasetX_pred.drop(['day_of_week'],1)
-#datasetX.head(10)
-# datasetX['day_of_week_1'] = df.day_of_week.apply(lambda x:np.sin(x))
-# datasetX['day_of_week_2'] = df.day_of_week.apply(lambda x:np.cos(x))
-# datasetX_pred['day_of_week_1'] = df_to_predict.day_of_week.apply(lambda x:np.sin(x))
-# datasetX_pred['day_of_week_2'] = df_to_predict.day_of_week.apply(lambda x:np.cos(x))
 
 print("X:",datasetX.head(30))
-#print(datasetX_pred.head(10))
-#Dividing the original train dataset into train/test set
+
+#Dividing the original train dataset into train/test set, whole set because keras provides spliting to cross-validation and train set
 train_setX = datasetX
 train_setY = datasetY
-test_setX = datasetX.ix[TRAIN_SIZE-1:,:]
-test_setY = datasetY.ix[TRAIN_SIZE-1:]
-# train_setX = datasetX.ix[:TRAIN_SIZE-1,:]
-# train_setY = datasetY.ix[:TRAIN_SIZE-1]
-# test_setX = datasetX.ix[TRAIN_SIZE-1:,:]
-# test_setY = datasetY.ix[TRAIN_SIZE-1:]
-
-# datasetX.groupby('hour')[['hour_peak','hour_slope']].mean().plot()
-# plt.show()
 
 #Conversion from DF to numpyarray for Keras funcs
 train_setX = np.array(train_setX)
 train_setY = np.array(train_setY)
-test_setX = np.array(test_setX)
-test_setY = np.array(test_setY)
 
 #Defining our NN model
 model = Sequential()
-model.add(Dense(units=9, input_dim=11))
+model.add(Dense(units=9, input_dim=13,kernel_initializer='he_normal',
+                bias_initializer='zeros'))
 model.add(Activation("tanh"))
-model.add(Dense(units=9))
+model.add(Dense(units=9,kernel_initializer='he_normal',
+                bias_initializer='zeros'))
 model.add(Activation("tanh"))
-model.add(Dense(units=9))
+model.add(Dense(units=9,kernel_initializer='he_normal',
+                bias_initializer='zeros'))
 model.add(Activation("tanh"))
-model.add(Dense(units=9))
+model.add(Dense(units=9,kernel_initializer='he_normal',
+                bias_initializer='zeros'))
 model.add(Activation("tanh"))
-model.add(Dense(units=1))
+model.add(Dense(units=3,kernel_initializer='he_normal',
+                bias_initializer='zeros'))
 model.add(Activation("relu"))
 model.compile(loss=rmsle, optimizer='adam')
-#model.compile(loss='mse', optimizer=SGD(lr=0.01, momentum=0.9, nesterov=True))
+
+#Defining checkpoint and callbacks to save the best set of weights and limit printing
 checkpoint = ModelCheckpoint('best_weights.hdf5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
-history_callback = model.fit(train_setX, train_setY, epochs=50000, batch_size=50,validation_split=0.2,verbose=2,callbacks=callbacks_list)
+
+#Start training
+history_callback = model.fit(train_setX, train_setY, epochs=20000, batch_size=50,validation_split=0.1,verbose=2,callbacks=callbacks_list)
+
+#Recovering val_loss history and training loss history from callbacks to arrays
 loss_history = history_callback.history["loss"]
 val_loss_history = history_callback.history["val_loss"]
-#model.load_weights('best_weights.hdf5')
+
+#Loading weights
+model.load_weights('best_weights.hdf5')
 model.load_weights('best_weights.hdf5')
 
+#Making predictionsand saving them to csv
 predictions = model.predict(np.array(datasetX_pred))
-
 predictions_count = predictions[:,-1]
 np.savetxt("predictions.csv", predictions_count, delimiter=",")
 np.savetxt("all_predictions.csv", predictions, delimiter=",")
+
+#Plotting training loss and validation loss to control overfitting
 plt.plot(loss_history)
 plt.plot(val_loss_history)
 plt.savefig('30keps_3_outputs_interpolated_hum')
