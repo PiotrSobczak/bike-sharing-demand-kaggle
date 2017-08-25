@@ -103,7 +103,7 @@ datasetX = datasetX.drop(['day_of_week'],1)
 datasetX_pred = datasetX_pred.drop(['day_of_week'],1)
 #datasetX.head(10)
 
-print("X:",datasetX.head(30))
+print("X:",datasetX.head(5))
 #print(datasetX_pred.head(10))
 
 #Dividing the original train dataset into train/test set, whole set because keras provides spliting to cross-validation and train set
@@ -122,7 +122,8 @@ classifier.fit(datasetX, datasetY)
 
 #Making predictions on train set and setting negative results to zero
 predictions_train = classifier.predict(datasetX)
-predictions_train = [lambda y: y if y >=0 else 0 for y in predictions_train]
+get_positive_vals = lambda x: x if x >=0 else 0
+predictions_train = [get_positive_vals(y) for y in predictions_train]
 
 #Calculating error on train set
 labels_train = np.array(df.ix[:,'count'])
@@ -131,7 +132,7 @@ print ("Error:",train_error)
 
 #Making predictions on test set and setting negative results to zero
 predictions_test = classifier.predict(datasetX_pred)
-predictions_test_final = [lambda y: y if y >=0 else 0 for y in predictions_test]
+predictions_test_final = [get_positive_vals(y) for y in predictions_test]
 
 #Saving predictions
 np.savetxt("svm_predictions.csv", predictions_test_final, delimiter=",")
