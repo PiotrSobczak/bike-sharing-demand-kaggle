@@ -13,6 +13,12 @@ MONTHS_IN_YEAR = 12
 def norm_arr(array):
     return (array - array.min() - (array.max() - array.min()) / 2) / ((array.max() - array.min()) / 2)
 
+def get_train_error(predictions_train,labels_train):
+    total_error = 0
+    for y_pred, label in zip(predictions_train, labels_train):
+        total_error = total_error + (np.log(y_pred + 1) - np.log(label + 1)) ** 2
+    return np.sqrt(total_error / len(predictions_train))
+
 #Reading datasets
 df = pd.read_csv('data/train.csv')
 df_to_predict = pd.read_csv('data/test.csv')
@@ -110,19 +116,22 @@ train_setY = datasetY.ix[:]
 train_setX = np.array(train_setX)
 train_setY = np.array(train_setY)
 
+#Training our model
 classifier = svm.SVR()
 classifier.fit(datasetX, datasetY)
+
+#Making predictions on train set and setting negative results to zero
 predictions_train = classifier.predict(datasetX)
-get_pos = lambda x: x if x >=0 else 0
-predictions_train = [get_pos(y) for y in predictions_train]
-#print(predictions_train)
+predictions_train = [lambda y: y if y >=0 else 0 for y in predictions_train]
+
+#Calculating error on train set
 labels_train = np.array(df.ix[:,'count'])
-#print('2:',labels_train)
-total_error=0
-for y_pred,label in zip(predictions_train,labels_train):
-    total_error = total_error + (np.log(y_pred + 1) - np.log(label + 1))**2
-print ("Error:",np.sqrt(total_error/len(predictions_train)))
-predictions = classifier.predict(datasetX_pred)
-predictions = [get_pos(y) for y in predictions]
-np.savetxt("svm_predictions.csv", predictions, delimiter=",")
-#print(predictions)
+train_error = get_train_error(predictions_train,labels_train)
+print ("Error:",train_error)
+
+#Making predictions on test set and setting negative results to zero
+predictions_test = classifier.predict(datasetX_pred)
+predictions_test_final = [lambda y: y if y >=0 else 0 for y in predictions_test]
+
+#Saving predictions
+np.savetxt("svm_predictions.csv", predictions_test_final, delimiter=",")
