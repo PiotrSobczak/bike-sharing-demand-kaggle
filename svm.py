@@ -59,10 +59,6 @@ df_to_predict['day_of_week'] = df_to_predict.datetime.apply(fu.get_day_of_week)
 #DAYS OF WEEK REG/CAS
 fu.days_of_week_reg = np.array(df.groupby('day_of_week')['registered'].mean())
 fu.days_of_week_cas = np.array(df.groupby('day_of_week')['casual'].mean())
-df['day_of_week_reg'] = df.day_of_week.apply(fu.get_day_of_week_reg)
-df['day_of_week_cas'] = df.day_of_week.apply(fu.get_day_of_week_cas)
-df_to_predict['day_of_week_reg'] = df_to_predict.day_of_week.apply(fu.get_day_of_week_reg)
-df_to_predict['day_of_week_cas'] = df_to_predict.day_of_week.apply(fu.get_day_of_week_cas)
 
 #Hour impact array
 fu.hours_impact = np.array(df.groupby('hour')['count'].mean())
@@ -99,12 +95,12 @@ print(datasetY.head(10))
 datasetX = (datasetX - datasetX.min() - (datasetX.max() - datasetX.min())/2) / ((datasetX.max() - datasetX.min())/2)
 datasetX_pred = (datasetX_pred - datasetX_pred.min() - (datasetX_pred.max() - datasetX_pred.min())/2) / ((datasetX_pred.max() - datasetX_pred.min())/2)
 
-datasetX = datasetX.drop(['day_of_week'],1)
-datasetX_pred = datasetX_pred.drop(['day_of_week'],1)
+# datasetX = datasetX.drop(['day_of_week'],1)
+# datasetX_pred = datasetX_pred.drop(['day_of_week'],1)
 #datasetX.head(10)
 
-print("X:",datasetX.head(5))
-#print(datasetX_pred.head(10))
+print("Trainset:",datasetX.head(5))
+print("Testset:",datasetX_pred.head(5))
 
 #Dividing the original train dataset into train/test set, whole set because keras provides spliting to cross-validation and train set
 train_setX = datasetX.ix[:,:]
