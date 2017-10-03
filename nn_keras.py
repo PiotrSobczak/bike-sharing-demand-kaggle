@@ -73,17 +73,17 @@ df['hour_reg'] = df.datetime.apply(fu.get_hour_registered)
 df['hour_cas'] = df.datetime.apply(fu.get_hour_casual)
 df_to_predict['hour_reg'] = df_to_predict.datetime.apply(fu.get_hour_registered)
 df_to_predict['hour_cas'] = df_to_predict.datetime.apply(fu.get_hour_casual)
-print(df.head(10))
+#print(df.head(10))
 
 #Data randomization(shuffling)
 df = df.sample(frac=1).reset_index(drop=True)
-print(df.head(30))
+#print(df.head(30))
 
 #Spitting data into input features and labels
 datasetY = df.ix[:,'casual':'count']
 datasetX = df.drop(['casual','registered','count','datetime','windspeed','atemp','season','month'],1)
 datasetX_pred = df_to_predict.drop(['datetime','windspeed','atemp','season'],1)
-print(datasetY.head(10))
+#print(datasetY.head(10))
 
 #Normalizing inputs
 datasetX = (datasetX - datasetX.min() - (datasetX.max() - datasetX.min())/2) / ((datasetX.max() - datasetX.min())/2)
@@ -92,7 +92,8 @@ datasetX_pred = (datasetX_pred - datasetX_pred.min() - (datasetX_pred.max() - da
 datasetX = datasetX.drop(['day_of_week'],1)
 datasetX_pred = datasetX_pred.drop(['day_of_week'],1)
 
-print("X:",datasetX.head(30))
+print("Features used:",datasetX.shape)
+print("Final train set:",datasetX.head(10))
 
 #Dividing the original train dataset into train/test set, whole set because keras provides spliting to cross-validation and train set
 train_setX = datasetX
@@ -102,18 +103,20 @@ train_setY = datasetY
 train_setX = np.array(train_setX)
 train_setY = np.array(train_setY)
 
+deep_layers_size = 10
+
 #Defining our NN model
 model = Sequential()
-model.add(Dense(units=9, input_dim=13,kernel_initializer='he_normal',
+model.add(Dense(units=deep_layers_size, input_dim=13,kernel_initializer='he_normal',
                 bias_initializer='zeros'))
 model.add(Activation("tanh"))
-model.add(Dense(units=9,kernel_initializer='he_normal',
+model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
                 bias_initializer='zeros'))
 model.add(Activation("tanh"))
-model.add(Dense(units=9,kernel_initializer='he_normal',
+model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
                 bias_initializer='zeros'))
 model.add(Activation("tanh"))
-model.add(Dense(units=9,kernel_initializer='he_normal',
+model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
                 bias_initializer='zeros'))
 model.add(Activation("tanh"))
 model.add(Dense(units=3,kernel_initializer='he_normal',
@@ -126,11 +129,13 @@ checkpoint = ModelCheckpoint('best_weights.hdf5', monitor='val_loss', verbose=1,
 callbacks_list = [checkpoint]
 
 #Start training
-history_callback = model.fit(train_setX, train_setY, epochs=20000, batch_size=50,validation_split=0.1,verbose=2,callbacks=callbacks_list)
+history_callback = model.fit(train_setX, train_setY, epochs=0000, batch_size=50,validation_split=0.1,verbose=2,callbacks=callbacks_list)
 
 #Recovering val_loss history and training loss history from callbacks to arrays
 loss_history = history_callback.history["loss"]
 val_loss_history = history_callback.history["val_loss"]
+
+np.savetxt("error_plot.csv", [loss_history,val_loss_history], delimiter=",")
 
 #Loading weights
 model.load_weights('best_weights.hdf5')
@@ -144,7 +149,5 @@ np.savetxt("all_predictions.csv", predictions, delimiter=",")
 #Plotting training loss and validation loss to control overfitting
 plt.plot(loss_history)
 plt.plot(val_loss_history)
-plt.savefig('30keps_3_outputs_interpolated_hum')
 plt.show()
 
-print(predictions)
