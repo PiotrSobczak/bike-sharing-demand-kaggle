@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from feature_utils import FeatureUtils as fu
 import torch
+from torch.autograd import Variable
 TOTAL_DATASET_SIZE = 10887
 
 def norm_arr(array):
@@ -88,8 +89,32 @@ print("Final train set:",datasetX.head(10))
 
 #Dividing the original train dataset into train/test set, whole set because keras provides spliting to cross-validation and train set
 train_setX = datasetX
-train_setY = datasetY
+train_setY = datasetY[['casual','registered','count']].astype(float)
 
-#Conversion from DF to numpyarray for Keras funcs
+#Conversion from DF to numpyarray
 train_setX = np.array(train_setX)
 train_setY = np.array(train_setY)
+print(train_setX.shape)
+layer_dims = {"in": 12, "fc1": 10, "fc2": 10, "fc3": 10,"fc4": 10, "out": 3}
+
+# Create random Tensors to hold inputs and outputs, and wrap them in Variables.
+X = torch.Tensor(train_setX)
+Y = torch.Tensor(train_setY)
+#y = Variable(torch.randn(N, D_out), requires_grad=False)
+
+# Use the nn package to define our model and loss function.
+model = torch.nn.Sequential(
+    torch.nn.Tanh(layer_dims["in"], layer_dims["fc1"]),
+    torch.nn.Tanh(layer_dims['fc1'],layer_dims['fc2']),
+    torch.nn.Tanh(layer_dims['fc2'],layer_dims['fc3']),
+    torch.nn.Tanh(layer_dims['fc3'],layer_dims['fc4']),
+    torch.nn.ReLU(layer_dims['fc4'],layer_dims['out'])
+)
+loss_fn = torch.nn.MSELoss(size_average=False)
+
+# Use the optim package to define an Optimizer that will update the weights of
+# the model for us. Here we will use Adam; the optim package contains many other
+# optimization algoriths. The first argument to the Adam constructor tells the
+# optimizer which Variables it should update.
+learning_rate = 1e-4
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
