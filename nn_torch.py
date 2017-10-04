@@ -75,7 +75,7 @@ df = df.sample(frac=1).reset_index(drop=True)
 #print(df.head(30))
 
 #Spitting data into input features and labels
-datasetY = df.ix[:,'casual':'count']
+datasetY = df.ix[:,'count'].astype(float)
 datasetX = df.drop(['casual','registered','count','datetime','windspeed','atemp','season','month'],1)
 datasetX_pred = df_to_predict.drop(['datetime','windspeed','atemp','season'],1)
 #print(datasetY.head(10))
@@ -88,20 +88,20 @@ datasetX = datasetX.drop(['day_of_week'],1)
 datasetX_pred = datasetX_pred.drop(['day_of_week'],1)
 
 print("Features used:",datasetX.shape)
-print("Final train set:",datasetX.head(10))
+print("Final train set:",datasetX.head(1))
 
 #Dividing the original train dataset into train/test set, whole set because keras provides spliting to cross-validation and train set
-train_setX = datasetX
-train_setY = datasetY[['casual','registered','count']].astype(float)
+#train_setX = datasetX
+#train_setY = datasetY[['casual','registered','count']]
 
 epochs = 50000
 train_data_size = 1000
-layer_dims = {"in": 13, "fc1": 10, "fc2": 10, "fc3": 10,"fc4": 10, "out": 3}
+layer_dims = {"in": 13, "fc1": 10, "fc2": 10, "fc3": 10,"fc4": 10, "out": 1}
 
 #Conversion from DF to numpyarray
-X_train = np.array(train_setX[:train_data_size])
-Y_train = np.array(train_setY[:train_data_size])
-print(train_setX.shape)
+X_train = np.array(datasetX[:train_data_size])
+Y_train = np.array(datasetY[:train_data_size])
+#print(train_setX.shape)
 
 # Create random Tensors to hold inputs and outputs, and wrap them in Variables.
 X_train = Variable(torch.Tensor(X_train))
@@ -126,8 +126,8 @@ model = torch.nn.Sequential(
 # the model for us. Here we will use Adam; the optim package contains many other
 # optimization algoriths. The first argument to the Adam constructor tells the
 # optimizer which Variables it should update.
-learning_rate = 1e-4
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+#learning_rate = 1e-4
+optimizer = torch.optim.Adam(model.parameters())
 
 for t in range(epochs):
     # Forward pass: compute predicted y by passing x to the model.
