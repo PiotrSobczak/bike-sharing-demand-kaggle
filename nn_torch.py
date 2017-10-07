@@ -3,6 +3,8 @@ import numpy as np
 from feature_utils import FeatureUtils as fu
 import torch
 from torch.autograd import Variable
+import math
+
 TOTAL_DATASET_SIZE = 10887
 
 def norm_arr(array):
@@ -13,7 +15,6 @@ def rmsle(y_pred,y_true):
     squared_le = torch.pow(log_err,2)
     mean_sle = torch.mean(squared_le)
     root_msle = torch.sqrt(mean_sle)
-    #print(y_pred.data,y_true.data,log_err.data,squared_le.data,mean_sle.data,root_msle.data)
     return (root_msle)
 
 #Reading datasets
@@ -128,8 +129,8 @@ model = torch.nn.Sequential(
     torch.nn.Tanh(),
     torch.nn.Linear(layer_dims['fc3'],layer_dims['fc4']),
     torch.nn.Tanh(),
-    torch.nn.Linear(layer_dims['fc4'],layer_dims['out'],
-    torch.nn.ReLU())
+    torch.nn.Linear(layer_dims['fc4'],layer_dims['out']),
+    torch.nn.ReLU()
 )
 
 optimizer = torch.optim.Adam(model.parameters(),lr=0.0001)
@@ -143,6 +144,7 @@ for epoch in range(epochs):
     pred_train = model(X_train)
     train_loss = rmsle(pred_train, Y_train).data[0]
     print("Epoch",epoch,": val loss", val_loss,", train loss:",train_loss)
+
     for step in range(steps_in_epoch):
         # Forward pass: compute predicted y by passing x to the model.
         X_train_batch = Variable(X_train.data[batch_ind:batch_ind + batch_size])
