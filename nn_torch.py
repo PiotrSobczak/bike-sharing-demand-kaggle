@@ -5,7 +5,7 @@ from torch.autograd import Variable
 
 TOTAL_DATASET_SIZE = 10887
 
-dtype = torch.cuda.FloatTensor
+dtype = torch.Tensor
 
 def rmsle(y_pred,y_true):
     log_err = torch.log(y_pred + 1) - torch.log(y_true + 1)
@@ -29,8 +29,8 @@ X_val = np.array(datasetX[train_data_size:])
 Y_val = np.array(datasetY[train_data_size:])
 
 # Create random Tensors to hold inputs and outputs, and wrap them in Variables.
-X_train = Variable(torch.cuda.FloatTensor(X_train))
-Y_train = Variable(torch.cuda.FloatTensor(Y_train))
+X_train = Variable(torch.Tensor(X_train))
+Y_train = Variable(torch.Tensor(Y_train))
 X_train_batch = Variable(torch.randn(batch_size, 13))
 Y_train_batch = Variable(torch.randn(batch_size))
 X_val = Variable(torch.Tensor(X_val))
