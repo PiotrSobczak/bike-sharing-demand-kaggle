@@ -6,7 +6,7 @@ from keras.layers import Dense, Activation
 from keras.callbacks import ModelCheckpoint
 import keras.backend as KB
 from keras.layers import Dropout
-from feature_utils import FeatureUtils as fu
+from data_utils import DataUtils as du
 
 TOTAL_DATASET_SIZE = 10887
 
@@ -21,58 +21,58 @@ df = pd.read_csv('data/train.csv')
 df_to_predict = pd.read_csv('data/test.csv')
 
 #Adding continous time as variable because of the increasing amount of bikes over time
-df['cont_time'] = df.datetime.apply(fu.datetime_to_total_hours)
-df_to_predict['cont_time'] = df_to_predict.datetime.apply(fu.datetime_to_total_hours)
+df['cont_time'] = df.datetime.apply(du.datetime_to_total_hours)
+df_to_predict['cont_time'] = df_to_predict.datetime.apply(du.datetime_to_total_hours)
 
 #Adding hour temporarily
-df['hour'] = df.datetime.apply(fu.get_hour)
-df_to_predict['hour'] = df_to_predict.datetime.apply(fu.get_hour)
+df['hour'] = df.datetime.apply(du.get_hour)
+df_to_predict['hour'] = df_to_predict.datetime.apply(du.get_hour)
 
 #Little refactor of humidity to make it easier to learn
-fu.humidity_impact = np.array(df.groupby('humidity')['count'].mean())
+du.humidity_impact = np.array(df.groupby('humidity')['count'].mean())
 
 #Month
-df['month'] = df.datetime.apply(fu.get_month)
+df['month'] = df.datetime.apply(du.get_month)
 
 #Getting month impact, which tells us how good is the month for bikes, far better than 'season' and is easier to learn than pure month value
-fu.months_impact = np.array(df.groupby('month')['count'].mean())
-df['month_impact'] = df.datetime.apply(fu.get_month_impact)
-df_to_predict['month_impact'] = df_to_predict.datetime.apply(fu.get_month_impact)
+du.months_impact = np.array(df.groupby('month')['count'].mean())
+df['month_impact'] = df.datetime.apply(du.get_month_impact)
+df_to_predict['month_impact'] = df_to_predict.datetime.apply(du.get_month_impact)
 
 #Year
-df['year'] = df.datetime.apply(fu.get_year)
-df_to_predict['year'] = df_to_predict.datetime.apply(fu.get_year)
+df['year'] = df.datetime.apply(du.get_year)
+df_to_predict['year'] = df_to_predict.datetime.apply(du.get_year)
 
 #Day of week
-df['day_of_week'] = df.datetime.apply(fu.get_day_of_week)
-df_to_predict['day_of_week'] = df_to_predict.datetime.apply(fu.get_day_of_week)
+df['day_of_week'] = df.datetime.apply(du.get_day_of_week)
+df_to_predict['day_of_week'] = df_to_predict.datetime.apply(du.get_day_of_week)
 
 #DAY OF WEEK REG/CAS
-fu.days_of_week_reg = np.array(df.groupby('day_of_week')['registered'].mean())
-fu.days_of_week_cas = np.array(df.groupby('day_of_week')['casual'].mean())
-df['day_of_week_reg'] = df.day_of_week.apply(fu.get_day_of_week_reg)
-df['day_of_week_cas'] = df.day_of_week.apply(fu.get_day_of_week_cas)
-df_to_predict['day_of_week_reg'] = df_to_predict.day_of_week.apply(fu.get_day_of_week_reg)
-df_to_predict['day_of_week_cas'] = df_to_predict.day_of_week.apply(fu.get_day_of_week_cas)
+du.days_of_week_reg = np.array(df.groupby('day_of_week')['registered'].mean())
+du.days_of_week_cas = np.array(df.groupby('day_of_week')['casual'].mean())
+df['day_of_week_reg'] = df.day_of_week.apply(du.get_day_of_week_reg)
+df['day_of_week_cas'] = df.day_of_week.apply(du.get_day_of_week_cas)
+df_to_predict['day_of_week_reg'] = df_to_predict.day_of_week.apply(du.get_day_of_week_reg)
+df_to_predict['day_of_week_cas'] = df_to_predict.day_of_week.apply(du.get_day_of_week_cas)
 
 #Hour impact array
-fu.hours_impact = np.array(df.groupby('hour')['count'].mean())
+du.hours_impact = np.array(df.groupby('hour')['count'].mean())
 
 #Hour impact arrays for registered and casual
-fu.hours_cas = np.array(df.groupby('hour')['casual'].mean())
-fu.hours_reg = np.array(df.groupby('hour')['registered'].mean())
+du.hours_cas = np.array(df.groupby('hour')['casual'].mean())
+du.hours_reg = np.array(df.groupby('hour')['registered'].mean())
 
 #Hour impact arrays for workingday, freeday, sat, sun
-fu.hours_workday = norm_arr(df.loc[df['workingday'] == 1].groupby('hour')['count'].mean())
-fu.hours_freeday = norm_arr(df.loc[(df['workingday'] == 0) & (df['day_of_week'] < 5)].groupby('hour')['count'].mean())
-fu.hours_sat = norm_arr(df.loc[df['day_of_week'] == 5].groupby('hour')['count'].mean())
-fu.hours_sun = norm_arr(df.loc[df['day_of_week'] == 6].groupby('hour')['count'].mean())
+du.hours_workday = norm_arr(df.loc[df['workingday'] == 1].groupby('hour')['count'].mean())
+du.hours_freeday = norm_arr(df.loc[(df['workingday'] == 0) & (df['day_of_week'] < 5)].groupby('hour')['count'].mean())
+du.hours_sat = norm_arr(df.loc[df['day_of_week'] == 5].groupby('hour')['count'].mean())
+du.hours_sun = norm_arr(df.loc[df['day_of_week'] == 6].groupby('hour')['count'].mean())
 
 #Hour impact for registered and casual
-df['hour_reg'] = df.datetime.apply(fu.get_hour_registered)
-df['hour_cas'] = df.datetime.apply(fu.get_hour_casual)
-df_to_predict['hour_reg'] = df_to_predict.datetime.apply(fu.get_hour_registered)
-df_to_predict['hour_cas'] = df_to_predict.datetime.apply(fu.get_hour_casual)
+df['hour_reg'] = df.datetime.apply(du.get_hour_registered)
+df['hour_cas'] = df.datetime.apply(du.get_hour_casual)
+df_to_predict['hour_reg'] = df_to_predict.datetime.apply(du.get_hour_registered)
+df_to_predict['hour_cas'] = df_to_predict.datetime.apply(du.get_hour_casual)
 #print(df.head(10))
 
 #Data randomization(shuffling)
@@ -99,7 +99,7 @@ print("Final train set:",datasetX.head(10))
 train_setX = datasetX
 train_setY = datasetY
 
-#Conversion from DF to numpyarray for Keras funcs
+#Conversion from DF to numpyarray for Keras duncs
 train_setX = np.array(train_setX)
 train_setY = np.array(train_setY)
 
