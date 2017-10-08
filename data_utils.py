@@ -225,7 +225,6 @@ class DataUtils:
         datasetX = datasetX.drop(['day_of_week'], 1)
         datasetX_pred = datasetX_pred.drop(['day_of_week'], 1)
 
-        print("Features used:", datasetX.shape)
-        print("Final train set:", datasetX.head(1))
+        print("DF loaded, columns:", datasetX.columns.values,", shape:", datasetX.shape)
 
         return datasetX,datasetY,datasetX_pred
