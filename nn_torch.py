@@ -17,7 +17,7 @@ def rmsle(y_pred,y_true):
 
 datasetX,datasetY,datasetX_pred = du.get_processed_df('data/train.csv','data/test.csv')
 
-epochs = 10
+epochs = 10000
 train_data_size = 9600
 batch_size = 64
 steps_in_epoch = train_data_size//batch_size
@@ -53,7 +53,7 @@ model = torch.nn.Sequential(
     torch.nn.Linear(layer_dims['fc4'],layer_dims['out']),
     torch.nn.ReLU())
 
-optimizer = torch.optim.Adadelta(model.parameters())
+optimizer = torch.optim.Adadelta(model.parameters(),lr=0.1)
 
 mse = torch.nn.MSELoss()
 
@@ -89,7 +89,7 @@ for epoch in range(epochs):
 
         # Compute and print loss.
         loss = mse(y_pred, Y_train_batch)
-
+        #print(torch.mean(loss).data)
         optimizer.zero_grad()
 
         loss.backward()
