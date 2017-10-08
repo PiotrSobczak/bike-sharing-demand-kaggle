@@ -144,11 +144,11 @@ class DataUtils:
         return (array - array.min() - (array.max() - array.min()) / 2) / ((array.max() - array.min()) / 2)
 
     @staticmethod
-    def get_processed_df(df_path):
+    def get_processed_df(train_path,test_path):
 
         # Reading datasets
-        df = pd.read_csv(df_path)
-        df_to_predict = pd.read_csv('data/test.csv')
+        df = pd.read_csv(train_path)
+        df_to_predict = pd.read_csv(test_path)
 
         # Adding continous time as variable because of the increasing amount of bikes over time
         df['cont_time'] = df.datetime.apply(DataUtils.datetime_to_total_hours)

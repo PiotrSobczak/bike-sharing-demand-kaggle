@@ -2,6 +2,7 @@ import numpy as np
 from data_utils import DataUtils as du
 import torch
 from torch.autograd import Variable
+import matplotlib.pyplot as plt
 
 TOTAL_DATASET_SIZE = 10887
 
@@ -14,9 +15,9 @@ def rmsle(y_pred,y_true):
     root_msle = torch.sqrt(mean_sle)
     return (root_msle)
 
-datasetX,datasetY,datasetX_pred = du.get_processed_df('data/train.csv')
+datasetX,datasetY,datasetX_pred = du.get_processed_df('data/train.csv','data/test.csv')
 
-epochs = 100
+epochs = 10
 train_data_size = 9600
 batch_size = 64
 steps_in_epoch = train_data_size//batch_size
@@ -27,6 +28,8 @@ X_train = np.array(datasetX[:train_data_size])
 Y_train = np.array(datasetY[:train_data_size])
 X_val = np.array(datasetX[train_data_size:])
 Y_val = np.array(datasetY[train_data_size:])
+X_pred = np.array(datasetX_pred)
+
 
 # Create random Tensors to hold inputs and outputs, and wrap them in Variables.
 X_train = Variable(torch.Tensor(X_train))
@@ -35,6 +38,7 @@ X_train_batch = Variable(torch.randn(batch_size, 13))
 Y_train_batch = Variable(torch.randn(batch_size))
 X_val = Variable(torch.Tensor(X_val))
 Y_val = Variable(torch.Tensor(Y_val))
+X_pred = Variable(torch.Tensor(X_pred))
 
 # Use the nn package to define our model and loss dunction.
 model = torch.nn.Sequential(
@@ -55,18 +59,22 @@ mse = torch.nn.MSELoss()
 
 best_val_error = 1000
 best_train_error = 1000
+train_err_his = np.zeros(epochs)
+val_err_his = np.zeros(epochs)
 
 for epoch in range(epochs):
     batch_ind = 0
     info = ""
     pred_val = model(X_val)
     val_loss = rmsle(pred_val, Y_val).data[0]
+    val_err_his[epoch] = val_loss
     if val_loss < best_val_error:
         best_val_error = val_loss
         info = "Val error has improved!"
         torch.save(model,"saved_model.mdl")
     pred_train = model(X_train)
     train_loss = rmsle(pred_train, Y_train).data[0]
+    train_err_his[epoch] = train_loss
     if train_loss < best_train_error:
         best_train_error = train_loss
         info += "Train error has improved!"
@@ -90,5 +98,8 @@ for epoch in range(epochs):
         batch_ind += batch_size
 
 model = torch.load("saved_model.mdl")
-predictions = model(datasetX_pred)
-print(predictions)
+predictions = model(X_pred)
+np.savetxt("predictions.csv", np.array(predictions.data.numpy()), delimiter=",")
+plt.plot(val_err_his)
+plt.plot(train_err_his)
+plt.show()
