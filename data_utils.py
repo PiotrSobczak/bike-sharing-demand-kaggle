@@ -8,19 +8,6 @@ MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 MONTHS_IN_YEAR = 12
 
 class DataUtils:
-    hour_peak=[]
-    months_impact=[]
-    hours_impact=[]
-    hour_slope=[]
-    hours_sat=[]
-    hours_sun=[]
-    hours_workday=[]
-    hours_freeday=[]
-    hours_cas=[]
-    hours_reg = []
-    days_of_week_cas=[]
-    days_of_week_reg=[]
-
     @staticmethod
     def get_total_day_count(datetime):
         date,time = datetime.split(' ')
@@ -241,4 +228,4 @@ class DataUtils:
         print("Features used:", datasetX.shape)
         print("Final train set:", datasetX.head(1))
 
-        return datasetX,datasetY
+        return datasetX,datasetY,datasetX_pred

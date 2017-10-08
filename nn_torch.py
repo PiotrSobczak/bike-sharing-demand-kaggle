@@ -14,9 +14,9 @@ def rmsle(y_pred,y_true):
     root_msle = torch.sqrt(mean_sle)
     return (root_msle)
 
-datasetX,datasetY = du.get_processed_df('data/train.csv')
+datasetX,datasetY,datasetX_pred = du.get_processed_df('data/train.csv')
 
-epochs = 50000
+epochs = 100
 train_data_size = 9600
 batch_size = 64
 steps_in_epoch = train_data_size//batch_size
@@ -49,17 +49,29 @@ model = torch.nn.Sequential(
     torch.nn.Linear(layer_dims['fc4'],layer_dims['out']),
     torch.nn.ReLU())
 
-optimizer = torch.optim.Adam(model.parameters(),lr=0.0001)
+optimizer = torch.optim.Adadelta(model.parameters())
 
 mse = torch.nn.MSELoss()
 
+best_val_error = 1000
+best_train_error = 1000
+
 for epoch in range(epochs):
     batch_ind = 0
+    info = ""
     pred_val = model(X_val)
     val_loss = rmsle(pred_val, Y_val).data[0]
+    if val_loss < best_val_error:
+        best_val_error = val_loss
+        info = "Val error has improved!"
+        torch.save(model,"saved_model.mdl")
     pred_train = model(X_train)
     train_loss = rmsle(pred_train, Y_train).data[0]
-    print("Epoch",epoch,": val loss", val_loss,", train loss:",train_loss)
+    if train_loss < best_train_error:
+        best_train_error = train_loss
+        info += "Train error has improved!"
+
+    print("Epoch",epoch,": val loss", val_loss,", train loss:",train_loss,info)
 
     for step in range(steps_in_epoch):
         # Forward pass: compute predicted y by passing x to the model.
@@ -76,3 +88,7 @@ for epoch in range(epochs):
 
         optimizer.step()
         batch_ind += batch_size
+
+model = torch.load("saved_model.mdl")
+predictions = model(datasetX_pred)
+print(predictions)
