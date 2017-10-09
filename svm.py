@@ -45,10 +45,10 @@ if __name__ == '__main__':
 
     #Training our model
     svr_lin = SVR(kernel='linear', C=1000)
-    svr_rbf = SVR(kernel='rbf', C=1000, gamma=0.03)
-    svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=0.05)
+    svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=0.5)
+    svr_rbf = SVR(kernel='rbf', C=1000, gamma=2)
 
-    for name,classifier in zip(["Linear","Gaussian","Polynomial"],[svr_lin,svr_rbf,svr_poly]):
+    for name,classifier in zip(["Gaussian"],[svr_rbf]):
 
         classifier.fit(datasetX, datasetY)
 
@@ -66,4 +66,4 @@ if __name__ == '__main__':
         predictions_test = np.maximum(predictions_test, 0)
 
         #Saving predictions
-        np.savetxt("svm_predictions.csv", predictions_test, delimiter=",")
+        np.savetxt("svm_"+name+"_predictions.csv", predictions_test, delimiter=",")
