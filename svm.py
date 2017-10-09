@@ -43,14 +43,17 @@ if __name__ == '__main__':
     X_val = datasetX[TRAIN_SIZE:]
     Y_val = datasetY[TRAIN_SIZE:]
 
+    print("Train set:",X_train.shape)
+    print("Test set:",X_val.shape)
+
     #Training our model
-    svr_lin = SVR(kernel='linear', C=1000)
-    svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=0.5)
-    svr_rbf = SVR(kernel='rbf', C=1000, gamma=2)
+    #svr_lin = SVR(kernel='linear', C=1000)
+    #svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=0.5)
+    svr_rbf = SVR(kernel='rbf', C=1000, gamma=1)
 
     for name,classifier in zip(["Gaussian"],[svr_rbf]):
 
-        classifier.fit(datasetX, datasetY)
+        classifier.fit(X_train, Y_train)
 
         #Making predictions on train set and setting negative results to zero
         predictions_train = classifier.predict(X_train)
