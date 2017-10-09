@@ -49,11 +49,11 @@ if __name__ == '__main__':
     #Training our model
     #svr_lin = SVR(kernel='linear', C=1000)
     #svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=0.5)
-    svr_rbf = SVR(kernel='rbf', C=1000, gamma=1)
+    svr_rbf = SVR(kernel='rbf', C=325, gamma=0.1325)
 
     for name,classifier in zip(["Gaussian"],[svr_rbf]):
 
-        classifier.fit(X_train, Y_train)
+        classifier.fit(datasetX, datasetY)
 
         #Making predictions on train set and setting negative results to zero
         predictions_train = classifier.predict(X_train)
@@ -69,4 +69,4 @@ if __name__ == '__main__':
         predictions_test = np.maximum(predictions_test, 0)
 
         #Saving predictions
-        np.savetxt("svm_"+name+"_predictions.csv", predictions_test, delimiter=",")
+        np.savetxt("svm_" + name + "_predictions.csv", predictions_test, delimiter=",")
