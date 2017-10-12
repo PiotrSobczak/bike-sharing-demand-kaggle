@@ -16,10 +16,10 @@ def predict_on_test_set(model, x_cols):
 
     casual_model = model.fit(X_train, y_train_cas)
     y_pred_cas = casual_model.predict(X_test)
-    y_pred_cas = np.exp(y_pred_cas) - 1
+    #y_pred_cas = np.exp(y_pred_cas) - 1
     registered_model = model.fit(X_train, y_train_reg)
     y_pred_reg = registered_model.predict(X_test)
-    y_pred_reg = np.exp(y_pred_reg) - 1
+    #y_pred_reg = np.exp(y_pred_reg) - 1
     # add casual & registered predictions together
     return y_pred_cas + y_pred_reg
 
@@ -55,16 +55,16 @@ def predict_on_validation_set(model, input_cols):
     X_test, y_test_r, y_test_c = prep_data(test, input_cols)
 
     model_r = model.fit(X_train, y_train_r)
-    y_pred_r = np.exp(model_r.predict(X_test)) - 1
-
+    #y_pred_r = np.exp(model_r.predict(X_test)) - 1
+    y_pred_r = model_r.predict(X_test)
     model_c = model.fit(X_train, y_train_c)
-    y_pred_c = np.exp(model_c.predict(X_test)) - 1
-
+    #y_pred_c = np.exp(model_c.predict(X_test)) - 1
+    y_pred_c = model_c.predict(X_test)
     y_pred_comb = np.round(y_pred_r + y_pred_c)
     y_pred_comb[y_pred_comb < 0] = 0
 
-    y_test_comb = np.exp(y_test_r) + np.exp(y_test_c) - 2
-
+    #y_test_comb = np.exp(y_test_r) + np.exp(y_test_c) - 2
+    y_test_comb = y_test_r + y_test_c
     score = get_rmsle(y_pred_comb, y_test_comb)
     return (y_pred_comb, y_test_comb, score)
 
@@ -87,8 +87,11 @@ if __name__ == '__main__':
 
     # logarithmic transformation of dependent cols
     # (adding 1 first so that 0 values don't become -inf)
-    for col in ['casual', 'registered', 'count']:
-        df['%s_log' % col] = np.log(df[col] + 1)
+    # for col in ['casual', 'registered', 'count']:
+    #     df['%s_log' % col] = np.log(df[col] + 1)
+
+    df['registered_log'] = df['registered']
+    df['casual_log'] = df['casual']
 
     df['date'] = dt.date
     df['day'] = dt.day
@@ -99,11 +102,11 @@ if __name__ == '__main__':
     df['woy'] = dt.weekofyear
 
     # interpolate weather, atemp, humidity
-    df["weather"] = df["weather"].interpolate(method='time').apply(np.round)
-    df["temp"] = df["temp"].interpolate(method='time')
-    df["atemp"] = df["atemp"].interpolate(method='time')
-    df["humidity"] = df["humidity"].interpolate(method='time').apply(np.round)
-    df["windspeed"] = df["windspeed"].interpolate(method='time')
+    # df["weather"] = df["weather"].interpolate(method='time').apply(np.round)
+    # df["temp"] = df["temp"].interpolate(method='time')
+    # df["atemp"] = df["atemp"].interpolate(method='time')
+    # df["humidity"] = df["humidity"].interpolate(method='time').apply(np.round)
+    # df["windspeed"] = df["windspeed"].interpolate(method='time')
 
     # add a count_season column using join
     by_season = df[df['_data'] == 'train'].groupby('season')[['count']].agg(sum)
@@ -176,6 +179,7 @@ if __name__ == '__main__':
     gbm_pred = predict_on_test_set(gbm_model, gbm_cols)
     y_pred = np.round(.2*rf_pred + .8*gbm_pred)
     # output predictions for submission
+    y_pred=np.maximum(0,y_pred)
     df_test['count'] = y_pred
     final_df = df_test[['datetime', 'count']].copy()
-    final_df.to_csv('submit.csv', index=False)
+    final_df.to_csv('submit2.csv', index=False)
