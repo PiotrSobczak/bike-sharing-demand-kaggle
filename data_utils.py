@@ -210,10 +210,20 @@ class DataUtils:
         df = df.sample(frac=1).reset_index(drop=True)
         # print(df.head(30))
 
+        #Logarithmic transformation
+        df['count_log'] = np.log(df[['count']] + 1)
+
         # Spitting data into input features and labels
-        datasetY = df.ix[:, 'count'].astype(float)
-        datasetX = df.drop(['casual', 'registered', 'count', 'datetime', 'windspeed', 'atemp', 'season', 'month'], 1)
-        datasetX_pred = df_to_predict.drop(['datetime', 'windspeed', 'atemp', 'season'], 1)
+        features = ['year', 'month_impact', 'day_of_week_reg', 'day_of_week_cas', 'cont_time',
+                    'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity', 'weather']
+
+        datasetX = df[features]
+        datasetX_pred = df_to_predict[features]
+
+        datasetY = df[['count','count_log']].astype(float)
+
+        #datasetX = df.drop(['casual', 'registered', 'count', 'datetime', 'windspeed', 'atemp', 'season', 'month'], 1)
+        #datasetX_pred = df_to_predict.drop(['datetime', 'windspeed', 'atemp', 'season'], 1)
         # print(datasetY.head(10))
 
         # Normalizing inputs
@@ -222,8 +232,8 @@ class DataUtils:
         datasetX_pred = (datasetX_pred - datasetX_pred.min() - (datasetX_pred.max() - datasetX_pred.min()) / 2) / (
         (datasetX_pred.max() - datasetX_pred.min()) / 2)
 
-        datasetX = datasetX.drop(['day_of_week'], 1)
-        datasetX_pred = datasetX_pred.drop(['day_of_week'], 1)
+        #datasetX = datasetX.drop(['day_of_week'], 1)
+        #datasetX_pred = datasetX_pred.drop(['day_of_week'], 1)
 
         print("DF loaded, columns:", datasetX.columns.values,", shape:", datasetX.shape)
 

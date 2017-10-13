@@ -39,9 +39,9 @@ if __name__ == '__main__':
 
     #Dividing the original train dataset into train/test set, whole set because keras provides spliting to cross-validation and train set
     X_train = datasetX[:TRAIN_SIZE]
-    Y_train = datasetY[:TRAIN_SIZE]
+    Y_train = datasetY[:TRAIN_SIZE,1]
     X_val = datasetX[TRAIN_SIZE:]
-    Y_val = datasetY[TRAIN_SIZE:]
+    Y_val = datasetY[TRAIN_SIZE:,0]
 
     print("Train set:",X_train.shape)
     print("Test set:",X_val.shape)
@@ -53,20 +53,20 @@ if __name__ == '__main__':
 
     for name,classifier in zip(["Gaussian"],[svr_rbf]):
 
-        classifier.fit(datasetX, datasetY)
+        classifier.fit(datasetX, datasetY[:,1])
 
         #Making predictions on train set and setting negative results to zero
         predictions_train = classifier.predict(X_train)
-        predictions_train = np.maximum(predictions_train, 0)
+        #predictions_train = np.maximum(predictions_train, 0)
         train_error = rmsle(predictions_train,Y_train)
         predictions_val = classifier.predict(X_val)
-        predictions_val = np.maximum(predictions_val, 0)
-        val_error = rmsle(predictions_val,Y_val)
+        #predictions_val = np.maximum(predictions_val, 0)
+        val_error = rmsle(np.exp(predictions_val),Y_val)
         print (name,"kernel: Train error:",train_error,", Val error:",val_error)
 
         #Making predictions on test set and setting negative results to zero
         predictions_test = classifier.predict(datasetX_pred)
-        predictions_test = np.maximum(predictions_test, 0)
-
+        #predictions_test = np.maximum(predictions_test, 0)
+        predictions_test = np.exp(predictions_test)
         #Saving predictions
         np.savetxt("svm_" + name + "_predictions.csv", predictions_test, delimiter=",")
