@@ -39,17 +39,11 @@ if __name__ == '__main__':
     datasetY = np.array(datasetY)
     datasetX_pred = np.array(datasetX_pred)
 
-    #Dividing the original train dataset into train/test set, whole set because keras provides spliting to cross-validation and train set
-
-
-    #print("Train set:",X_train.shape)
-    #print("Test set:",X_val.shape)
-
-    #Training our model
+    #Definitions of other kernels one may want to use
     #svr_lin = SVR(kernel='linear', C=1000)
     #svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=0.5)
 
-    gammas = np.linspace(0.2,0.25,6)
+    gammas = np.linspace(0.1,0.3,21)
 
     val_error_hist = np.zeros(len(gammas))
     train_error_hist = np.zeros(len(gammas))
@@ -58,10 +52,12 @@ if __name__ == '__main__':
         svr_rbf = SVR(kernel='rbf', C=325, gamma=gamma)
         for name,classifier in zip(["Gaussian"],[svr_rbf]):
             for reverse in [False,True]:
+                #Getting seperate train and val datasets to control data distribution
                 X_train,Y_train,Y_train_log,X_val,Y_val = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
-                print("Loading dataset with reverse =",reverse,
-                      ",Dataset sizes: {X_train,Y_train,Y_train_log,X_val,Y_val}:{"
-                      ,X_train.shape,Y_train.shape,Y_train_log.shape,X_val.shape,Y_val.shape,"}")
+                #print("Loaded dataset with reverse =",reverse,
+                #      ",Dataset sizes: {X_train,Y_train,Y_train_log,X_val,Y_val}:{"
+                #      ,X_train.shape,Y_train.shape,Y_train_log.shape,X_val.shape,Y_val.shape,"}")
+
                 classifier.fit(X_train, Y_train_log)
 
                 #Making predictions on train set and setting negative results to zero
@@ -82,12 +78,12 @@ if __name__ == '__main__':
             train_error_hist[i] = train_error_hist[i] / 2
             print (name,"kernel, gamma = ",gamma,", Train error:",train_error_hist[i],", Val error:",val_error_hist[i])
 
-            #Making predictions on test set and setting negative results to zero
-            #predictions_test = classifier.predict(datasetX_pred)
-            #predictions_test = np.maximum(predictions_test, 0)
-            #predictions_test = np.exp(predictions_test) - 1
-            #Saving predictions
-            #np.savetxt("svm_" + name + "_predictions.csv", predictions_test, delimiter=",")
+    #Making predictions on test set and setting negative results to zero
+    #predictions_test = classifier.predict(datasetX_pred)
+    #predictions_test = np.exp(predictions_test) - 1
+
+    #Saving predictions
+    #np.savetxt("svm_" + name + "_predictions.csv", predictions_test, delimiter=",")
 
     plt.plot(val_error_hist)
     plt.plot(train_error_hist)
