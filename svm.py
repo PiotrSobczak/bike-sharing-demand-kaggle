@@ -40,14 +40,10 @@ if __name__ == '__main__':
     datasetX_pred = np.array(datasetX_pred)
 
     #Dividing the original train dataset into train/test set, whole set because keras provides spliting to cross-validation and train set
-    X_train = datasetX[:TRAIN_SIZE]
-    Y_train_log = datasetY[:TRAIN_SIZE,1]
-    Y_train = np.exp(Y_train_log) - 1
-    X_val = datasetX[TRAIN_SIZE:]
-    Y_val = datasetY[TRAIN_SIZE:,0]
 
-    print("Train set:",X_train.shape)
-    print("Test set:",X_val.shape)
+
+    #print("Train set:",X_train.shape)
+    #print("Test set:",X_val.shape)
 
     #Training our model
     #svr_lin = SVR(kernel='linear', C=1000)
@@ -61,21 +57,30 @@ if __name__ == '__main__':
     for i,gamma in enumerate(gammas):
         svr_rbf = SVR(kernel='rbf', C=325, gamma=gamma)
         for name,classifier in zip(["Gaussian"],[svr_rbf]):
+            for reverse in [False,True]:
+                X_train,Y_train,Y_train_log,X_val,Y_val = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
+                print("Loading dataset with reverse =",reverse,
+                      ",Dataset sizes: {X_train,Y_train,Y_train_log,X_val,Y_val}:{"
+                      ,X_train.shape,Y_train.shape,Y_train_log.shape,X_val.shape,Y_val.shape,"}")
+                classifier.fit(X_train, Y_train_log)
 
-            classifier.fit(X_train, Y_train_log)
+                #Making predictions on train set and setting negative results to zero
+                predictions_train_log = classifier.predict(X_train)
+                predictions_train = np.exp(predictions_train_log) - 1
+                train_error = rmsle(predictions_train,Y_train)
+                train_error_hist[i] += train_error
 
-            #Making predictions on train set and setting negative results to zero
-            predictions_train_log = classifier.predict(X_train)
-            predictions_train = np.exp(predictions_train_log) - 1
-            train_error = rmsle(predictions_train,Y_train)
-            train_error_hist[i] = train_error
+                predictions_val_log = classifier.predict(X_val)
+                predictions_val = np.exp(predictions_val_log) - 1
+                val_error = rmsle(predictions_val,Y_val)
+                val_error_hist[i] += val_error
 
-            predictions_val_log = classifier.predict(X_val)
-            predictions_val = np.exp(predictions_val_log) - 1
-            val_error = rmsle(predictions_val,Y_val)
-            val_error_hist[i] = val_error
+                print(name, "kernel, gamma = ", gamma, ", data reversed = ", reverse,
+                      ", Train error:", train_error, ", Val error:", val_error)
 
-            print (name,"kernel, gamma = ",gamma,", Train error:",train_error,", Val error:",val_error)
+            val_error_hist[i] = val_error_hist[i] / 2
+            train_error_hist[i] = train_error_hist[i] / 2
+            print (name,"kernel, gamma = ",gamma,", Train error:",train_error_hist[i],", Val error:",val_error_hist[i])
 
             #Making predictions on test set and setting negative results to zero
             #predictions_test = classifier.predict(datasetX_pred)

@@ -144,6 +144,23 @@ class DataUtils:
         return (array - array.min() - (array.max() - array.min()) / 2) / ((array.max() - array.min()) / 2)
 
     @staticmethod
+    def get_sep_datasets(X,Y,size_train,reverse_data_order = False):
+        if reverse_data_order is True:
+            size_val = X.shape[0] - size_train
+            X_train = X[size_val:]
+            Y_train_log = Y[size_val:, 1]
+            Y_train = np.exp(Y_train_log) - 1
+            X_val = X[:size_val]
+            Y_val = Y[:size_val, 0]
+        else:
+            X_train = X[:size_train]
+            Y_train_log = Y[:size_train, 1]
+            Y_train = np.exp(Y_train_log) - 1
+            X_val = X[size_train:]
+            Y_val = Y[size_train:, 0]
+        return X_train,Y_train,Y_train_log,X_val,Y_val
+
+    @staticmethod
     def get_processed_df(train_path,test_path):
 
         # Reading datasets
