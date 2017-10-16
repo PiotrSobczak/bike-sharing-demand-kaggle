@@ -149,13 +149,13 @@ class DataUtils:
             size_val = X.shape[0] - size_train
             X_train = X[size_val:]
             Y_train_log = Y[size_val:, 1]
-            Y_train = np.exp(Y_train_log) - 1
+            Y_train = Y[size_val:, 0]
             X_val = X[:size_val]
             Y_val = Y[:size_val, 0]
         else:
             X_train = X[:size_train]
             Y_train_log = Y[:size_train, 1]
-            Y_train = np.exp(Y_train_log) - 1
+            Y_train = Y[:size_train, 0]
             X_val = X[size_train:]
             Y_val = Y[size_train:, 0]
         return X_train,Y_train,Y_train_log,X_val,Y_val
@@ -236,7 +236,6 @@ class DataUtils:
 
         datasetX = df[features]
         datasetX_pred = df_to_predict[features]
-
         datasetY = df[['count','count_log']].astype(float)
 
         #datasetX = df.drop(['casual', 'registered', 'count', 'datetime', 'windspeed', 'atemp', 'season', 'month'], 1)
@@ -248,10 +247,12 @@ class DataUtils:
         (datasetX.max() - datasetX.min()) / 2)
         datasetX_pred = (datasetX_pred - datasetX_pred.min() - (datasetX_pred.max() - datasetX_pred.min()) / 2) / (
         (datasetX_pred.max() - datasetX_pred.min()) / 2)
+        #print(df_to_predict[['datetime']])
+        dataset_pred_date = df_to_predict[['datetime']]
 
         #datasetX = datasetX.drop(['day_of_week'], 1)
         #datasetX_pred = datasetX_pred.drop(['day_of_week'], 1)
 
         print("DF loaded, columns:", datasetX.columns.values,", shape:", datasetX.shape)
 
-        return datasetX,datasetY,datasetX_pred
+        return datasetX,datasetY,datasetX_pred,dataset_pred_date

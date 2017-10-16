@@ -1,6 +1,7 @@
 from sklearn.svm import SVR
 import numpy as np
 from matplotlib import pyplot as plt
+import pandas as pd
 
 from data_utils import DataUtils as du
 TOTAL_DATASET_SIZE = 10887
@@ -32,14 +33,15 @@ def rmsle(y_pred,y_true):
 
 if __name__ == '__main__':
 
-    datasetX,datasetY,datasetX_pred = du.get_processed_df('data/train.csv','data/test.csv')
+    datasetX,datasetY,datasetX_pred,df_predictions = du.get_processed_df('data/train.csv','data/test.csv')
 
     #Conversion from DF to numpyarray for Keras duncs
     datasetX = np.array(datasetX)
     datasetY = np.array(datasetY)
     datasetX_pred = np.array(datasetX_pred)
 
-    gammas = np.linspace(0.1,0.3,21)
+    #gammas = np.linspace(0.25,0.45,21)
+    gammas = [0.03]
 
     val_error_hist = np.zeros(len(gammas))
     train_error_hist = np.zeros(len(gammas))
@@ -51,7 +53,7 @@ if __name__ == '__main__':
         # svr_lin = SVR(kernel='linear', C=1000)
         # svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=gamma)
         for name,regressor in zip(["Gaussian"],[svr_rbf]):
-            for reverse in [False,True]:
+            for reverse in [False]:
                 #Getting seperate train and val datasets to control data distribution
                 X_train,Y_train,Y_train_log,X_val,Y_val = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
                 #print("Loaded dataset with reverse =",reverse,
@@ -59,35 +61,42 @@ if __name__ == '__main__':
                 #      ,X_train.shape,Y_train.shape,Y_train_log.shape,X_val.shape,Y_val.shape,"}")
                 
                 #Training our regression model
-                regressor.fit(X_train, Y_train_log)
+                #regressor.fit(X_train, Y_train_log)
+                regressor.fit(datasetX, datasetY[:,1])
 
                 #Making predictions on train set
                 predictions_train_log = regressor.predict(X_train)
                 predictions_train = np.exp(predictions_train_log) - 1
+                predictions_train = np.maximum(0, predictions_train)
                 train_error = rmsle(predictions_train,Y_train)
                 train_error_hist[i] += train_error
 
                 # Making predictions on val set
                 predictions_val_log = regressor.predict(X_val)
                 predictions_val = np.exp(predictions_val_log) - 1
+                predictions_val = np.maximum(0, predictions_val)
                 val_error = rmsle(predictions_val,Y_val)
                 val_error_hist[i] += val_error
 
-                print(name, "kernel, gamma = ", gamma, ", data reversed = ", reverse,
-                      ", Train error:", train_error, ", Val error:", val_error)
+                #print(name, "kernel, gamma = ", gamma, ", data reversed = ", reverse,
+                #      ", Train error:", train_error, ", Val error:", val_error)
+
+                # Making predictions on test set and setting negative results to zero
+                predictions_test = regressor.predict(datasetX_pred)
+                predictions_test = np.exp(predictions_test) - 1
+                predictions_test = np.maximum(0,predictions_test)
+
+                # Saving predictions
+                #print(dataset_pred_date[['datetime']],type(dataset_pred_date[['datetime']]))
+                df_predictions['count'] = predictions_test
+                # df_predictions = pd.DataFrame({'count':predictions_test,'date':dataset_pred_date[['datetime']]})
+                df_predictions.to_csv('predictions.csv', index=False)
 
             #Computing avg error from reversed and non-reversed data
             val_error_hist[i] = val_error_hist[i] / 2
             train_error_hist[i] = train_error_hist[i] / 2
 
             print (name,"kernel, gamma = ",gamma,", Train error:",train_error_hist[i],", Val error:",val_error_hist[i])
-
-    #Making predictions on test set and setting negative results to zero
-    #predictions_test = regressor.predict(datasetX_pred)
-    #predictions_test = np.exp(predictions_test) - 1
-
-    #Saving predictions
-    #np.savetxt("svm_" + name + "_predictions.csv", predictions_test, delimiter=",")
 
     plt.plot(val_error_hist)
     plt.plot(train_error_hist)
