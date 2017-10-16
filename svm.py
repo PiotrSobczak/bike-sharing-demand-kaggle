@@ -39,10 +39,6 @@ if __name__ == '__main__':
     datasetY = np.array(datasetY)
     datasetX_pred = np.array(datasetX_pred)
 
-    #Definitions of other kernels one may want to use
-    #svr_lin = SVR(kernel='linear', C=1000)
-    #svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=0.5)
-
     gammas = np.linspace(0.1,0.3,21)
 
     val_error_hist = np.zeros(len(gammas))
@@ -50,23 +46,29 @@ if __name__ == '__main__':
 
     for i,gamma in enumerate(gammas):
         svr_rbf = SVR(kernel='rbf', C=325, gamma=gamma)
-        for name,classifier in zip(["Gaussian"],[svr_rbf]):
+
+        # Definitions of other kernels one may want to use
+        # svr_lin = SVR(kernel='linear', C=1000)
+        # svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=gamma)
+        for name,regressor in zip(["Gaussian"],[svr_rbf]):
             for reverse in [False,True]:
                 #Getting seperate train and val datasets to control data distribution
                 X_train,Y_train,Y_train_log,X_val,Y_val = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
                 #print("Loaded dataset with reverse =",reverse,
                 #      ",Dataset sizes: {X_train,Y_train,Y_train_log,X_val,Y_val}:{"
                 #      ,X_train.shape,Y_train.shape,Y_train_log.shape,X_val.shape,Y_val.shape,"}")
+                
+                #Training our regression model
+                regressor.fit(X_train, Y_train_log)
 
-                classifier.fit(X_train, Y_train_log)
-
-                #Making predictions on train set and setting negative results to zero
-                predictions_train_log = classifier.predict(X_train)
+                #Making predictions on train set
+                predictions_train_log = regressor.predict(X_train)
                 predictions_train = np.exp(predictions_train_log) - 1
                 train_error = rmsle(predictions_train,Y_train)
                 train_error_hist[i] += train_error
 
-                predictions_val_log = classifier.predict(X_val)
+                # Making predictions on val set
+                predictions_val_log = regressor.predict(X_val)
                 predictions_val = np.exp(predictions_val_log) - 1
                 val_error = rmsle(predictions_val,Y_val)
                 val_error_hist[i] += val_error
@@ -74,12 +76,14 @@ if __name__ == '__main__':
                 print(name, "kernel, gamma = ", gamma, ", data reversed = ", reverse,
                       ", Train error:", train_error, ", Val error:", val_error)
 
+            #Computing avg error from reversed and non-reversed data
             val_error_hist[i] = val_error_hist[i] / 2
             train_error_hist[i] = train_error_hist[i] / 2
+
             print (name,"kernel, gamma = ",gamma,", Train error:",train_error_hist[i],", Val error:",val_error_hist[i])
 
     #Making predictions on test set and setting negative results to zero
-    #predictions_test = classifier.predict(datasetX_pred)
+    #predictions_test = regressor.predict(datasetX_pred)
     #predictions_test = np.exp(predictions_test) - 1
 
     #Saving predictions
