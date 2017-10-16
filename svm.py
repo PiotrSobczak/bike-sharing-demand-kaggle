@@ -53,7 +53,7 @@ if __name__ == '__main__':
     #svr_lin = SVR(kernel='linear', C=1000)
     #svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=0.5)
 
-    gammas = np.linspace(0.1,0.15,10)
+    gammas = np.linspace(0.2,0.25,6)
 
     val_error_hist = np.zeros(len(gammas))
     train_error_hist = np.zeros(len(gammas))
@@ -74,12 +74,13 @@ if __name__ == '__main__':
             predictions_val = np.exp(predictions_val_log) - 1
             val_error = rmsle(predictions_val,Y_val)
             val_error_hist[i] = val_error
+
             print (name,"kernel, gamma = ",gamma,", Train error:",train_error,", Val error:",val_error)
 
             #Making predictions on test set and setting negative results to zero
-            predictions_test = classifier.predict(datasetX_pred)
+            #predictions_test = classifier.predict(datasetX_pred)
             #predictions_test = np.maximum(predictions_test, 0)
-            predictions_test = np.exp(predictions_test)
+            #predictions_test = np.exp(predictions_test) - 1
             #Saving predictions
             #np.savetxt("svm_" + name + "_predictions.csv", predictions_test, delimiter=",")
 
