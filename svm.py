@@ -33,15 +33,14 @@ def rmsle(y_pred,y_true):
 
 if __name__ == '__main__':
 
-    #datasetX,datasetY,datasetX_pred,df_predictions = du.get_processed_df_nn('data/train.csv','data/test.csv')
+    # datasetX,datasetY,datasetX_pred,df_predictions = du.get_processed_df_nn('data/train.csv','data/test.csv')
 
     #Conversion from DF to numpyarray for Keras duncs
     # datasetX = np.array(datasetX)
     # datasetY = np.array(datasetY)
     # datasetX_pred = np.array(datasetX_pred)
 
-    #gammas = np.linspace(0.001,0.1,50)
-    gammas = [0.5]
+    gammas = np.linspace(0.07,0.2,30)
     Cs = np.linspace(100,1000,10)
     val_error_hist = np.zeros(len(gammas))
     train_error_hist = np.zeros(len(gammas))
@@ -55,18 +54,18 @@ if __name__ == '__main__':
         for name in ["Gaussian"]:
             for reverse in reverse_opts:
                 #Getting seperate train and val datasets to control data distribution
-                #X_train,Y_train,Y_train_log,X_val,Y_val = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
-
-                train_x, train_y, val_x, val_y,test_x,test_date_df = du.get_processed_df('data/train.csv','data/test.csv')
+                #train_x,train_y,Y_train_log,val_x,val_y = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
+                train_x, train_y, val_x, val_y,test_x,test_date_df = du.get_processed_df_nn('data/train.csv', 'data/test.csv')
+                #train_x, train_y, val_x, val_y,test_x,test_date_df = du.get_processed_df('data/train.csv','data/test.csv')
 
                 train_x = np.array(train_x)
                 train_y = np.array(train_y)
                 val_x = np.array(val_x)
                 val_y = np.array(val_y)
-                test_x = np.array(test_x)
+                #test_x = np.array(test_x)
 
                 #Training our regression model
-                regressor = SVR(kernel='rbf', C=325, gamma=gamma)
+                regressor = SVR(kernel='rbf', C=1000, gamma=gamma)
                 #regressor.fit(X_train, Y_train_log)
                 #print(np.max(train_x),np.min(train_x),np.max(train_y),np.min(train_y))
                 regressor.fit(train_x, train_y)
@@ -86,13 +85,13 @@ if __name__ == '__main__':
                 val_error_hist[i] += val_error
 
                 #Making predictions on test set and setting negative results to zero
-                predictions_test = regressor.predict(test_x)
+                #predictions_test = regressor.predict(test_x)
                 #predictions_test = np.exp(predictions_test) - 1
-                predictions_test = np.maximum(0,predictions_test)
+                #predictions_test = np.maximum(0,predictions_test)
 
                 #Saving predictions
-                test_date_df['count'] = predictions_test
-                test_date_df.to_csv('predictions.csv', index=False)
+                #test_date_df['count'] = predictions_test
+                #test_date_df.to_csv('predictions.csv', index=False)
 
                 # print(name, "kernel, gamma = ", gamma, ", data reversed = ", reverse,
                 #      ", Train error:", train_error, ", Val error:", val_error)
@@ -103,6 +102,6 @@ if __name__ == '__main__':
 
             print (name,"kernel, gamma = ",gamma,", Train error:",train_error_hist[i],", Val error:",val_error_hist[i])
 
-    plt.plot(val_error_hist)
-    plt.plot(train_error_hist)
+    plt.plot(gammas,val_error_hist)
+    plt.plot(gammas,train_error_hist)
     plt.show()
