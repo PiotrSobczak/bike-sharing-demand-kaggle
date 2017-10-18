@@ -33,68 +33,73 @@ def rmsle(y_pred,y_true):
 
 if __name__ == '__main__':
 
-    datasetX,datasetY,datasetX_pred,df_predictions = du.get_processed_df('data/train.csv','data/test.csv')
+    #datasetX,datasetY,datasetX_pred,df_predictions = du.get_processed_df_nn('data/train.csv','data/test.csv')
 
     #Conversion from DF to numpyarray for Keras duncs
-    datasetX = np.array(datasetX)
-    datasetY = np.array(datasetY)
-    datasetX_pred = np.array(datasetX_pred)
+    # datasetX = np.array(datasetX)
+    # datasetY = np.array(datasetY)
+    # datasetX_pred = np.array(datasetX_pred)
 
-    #gammas = np.linspace(0.25,0.45,21)
-    gammas = [0.03]
-
+    #gammas = np.linspace(0.001,0.1,50)
+    gammas = [0.5]
+    Cs = np.linspace(100,1000,10)
     val_error_hist = np.zeros(len(gammas))
     train_error_hist = np.zeros(len(gammas))
 
-    for i,gamma in enumerate(gammas):
-        svr_rbf = SVR(kernel='rbf', C=325, gamma=gamma)
+    reverse_opts = [False]
 
+    for i,gamma in enumerate(gammas):
         # Definitions of other kernels one may want to use
         # svr_lin = SVR(kernel='linear', C=1000)
         # svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=gamma)
-        for name,regressor in zip(["Gaussian"],[svr_rbf]):
-            for reverse in [False]:
+        for name in ["Gaussian"]:
+            for reverse in reverse_opts:
                 #Getting seperate train and val datasets to control data distribution
-                X_train,Y_train,Y_train_log,X_val,Y_val = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
-                #print("Loaded dataset with reverse =",reverse,
-                #      ",Dataset sizes: {X_train,Y_train,Y_train_log,X_val,Y_val}:{"
-                #      ,X_train.shape,Y_train.shape,Y_train_log.shape,X_val.shape,Y_val.shape,"}")
-                
+                #X_train,Y_train,Y_train_log,X_val,Y_val = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
+
+                train_x, train_y, val_x, val_y,test_x,test_date_df = du.get_processed_df('data/train.csv','data/test.csv')
+
+                train_x = np.array(train_x)
+                train_y = np.array(train_y)
+                val_x = np.array(val_x)
+                val_y = np.array(val_y)
+                test_x = np.array(test_x)
+
                 #Training our regression model
+                regressor = SVR(kernel='rbf', C=325, gamma=gamma)
                 #regressor.fit(X_train, Y_train_log)
-                regressor.fit(datasetX, datasetY[:,1])
+                #print(np.max(train_x),np.min(train_x),np.max(train_y),np.min(train_y))
+                regressor.fit(train_x, train_y)
 
                 #Making predictions on train set
-                predictions_train_log = regressor.predict(X_train)
-                predictions_train = np.exp(predictions_train_log) - 1
+                predictions_train = regressor.predict(train_x)
+                #predictions_train = np.exp(predictions_train_log) - 1
                 predictions_train = np.maximum(0, predictions_train)
-                train_error = rmsle(predictions_train,Y_train)
+                train_error = rmsle(predictions_train,train_y)
                 train_error_hist[i] += train_error
 
                 # Making predictions on val set
-                predictions_val_log = regressor.predict(X_val)
-                predictions_val = np.exp(predictions_val_log) - 1
+                predictions_val = regressor.predict(val_x)
+                # predictions_val = np.exp(predictions_val_log) - 1
                 predictions_val = np.maximum(0, predictions_val)
-                val_error = rmsle(predictions_val,Y_val)
+                val_error = rmsle(predictions_val,val_y)
                 val_error_hist[i] += val_error
 
-                #print(name, "kernel, gamma = ", gamma, ", data reversed = ", reverse,
-                #      ", Train error:", train_error, ", Val error:", val_error)
-
-                # Making predictions on test set and setting negative results to zero
-                predictions_test = regressor.predict(datasetX_pred)
-                predictions_test = np.exp(predictions_test) - 1
+                #Making predictions on test set and setting negative results to zero
+                predictions_test = regressor.predict(test_x)
+                #predictions_test = np.exp(predictions_test) - 1
                 predictions_test = np.maximum(0,predictions_test)
 
-                # Saving predictions
-                #print(dataset_pred_date[['datetime']],type(dataset_pred_date[['datetime']]))
-                df_predictions['count'] = predictions_test
-                # df_predictions = pd.DataFrame({'count':predictions_test,'date':dataset_pred_date[['datetime']]})
-                df_predictions.to_csv('predictions.csv', index=False)
+                #Saving predictions
+                test_date_df['count'] = predictions_test
+                test_date_df.to_csv('predictions.csv', index=False)
+
+                # print(name, "kernel, gamma = ", gamma, ", data reversed = ", reverse,
+                #      ", Train error:", train_error, ", Val error:", val_error)
 
             #Computing avg error from reversed and non-reversed data
-            val_error_hist[i] = val_error_hist[i] / 2
-            train_error_hist[i] = train_error_hist[i] / 2
+            val_error_hist[i] = val_error_hist[i] / len(reverse_opts)
+            train_error_hist[i] = train_error_hist[i] / len(reverse_opts)
 
             print (name,"kernel, gamma = ",gamma,", Train error:",train_error_hist[i],", Val error:",val_error_hist[i])
 

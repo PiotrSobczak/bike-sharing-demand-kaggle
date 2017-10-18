@@ -139,14 +139,29 @@ class DataUtils:
         year,_,_ = date.split('-') #['yyyy', 'mm', 'dd']
         return int(year)
 
+    def day_of_month(datetime):
+        date, _ = datetime.split(' ')
+        _,_,day = date.split('-') #['yyyy', 'mm', 'dd']
+        return int(day)
+
     @staticmethod
     def norm_arr(array):
         return (array - array.min() - (array.max() - array.min()) / 2) / ((array.max() - array.min()) / 2)
 
     @staticmethod
+    def save_to_csv(file_name,elements):
+        with open(file_name, 'ab') as f:
+            for elem in elements:
+                np.savetxt(f, elem, delimiter=',')
+    @staticmethod
+    def sort_df(df,col_name,asc=1):
+        return df.sort_values([col_name], ascending=[asc])
+
+    @staticmethod
     def get_sep_datasets(X,Y,size_train,reverse_data_order = False):
         if reverse_data_order is True:
             size_val = X.shape[0] - size_train
+            #print("val size:",size_val)
             X_train = X[size_val:]
             Y_train_log = Y[size_val:, 1]
             Y_train = Y[size_val:, 0]
@@ -161,11 +176,12 @@ class DataUtils:
         return X_train,Y_train,Y_train_log,X_val,Y_val
 
     @staticmethod
-    def get_processed_df(train_path,test_path):
-
+    def get_processed_df_nn(train_path,test_path):
         # Reading datasets
         df = pd.read_csv(train_path)
+        df['dataset'] = 0
         df_to_predict = pd.read_csv(test_path)
+        df_to_predict['dataset'] = 1
 
         # Adding continous time as variable because of the increasing amount of bikes over time
         df['cont_time'] = df.datetime.apply(DataUtils.datetime_to_total_hours)
@@ -193,6 +209,10 @@ class DataUtils:
         # Day of week
         df['day_of_week'] = df.datetime.apply(DataUtils.get_day_of_week)
         df_to_predict['day_of_week'] = df_to_predict.datetime.apply(DataUtils.get_day_of_week)
+
+        #Day of month for split
+        df['day_of_month'] = df.datetime.apply(DataUtils.get_day_of_month)
+        df_to_predict['day_of_month'] = df_to_predict.datetime.apply(DataUtils.get_day_of_month)
 
         # DAY OF WEEK REG/CAS
         DataUtils.days_of_week_reg = np.array(df.groupby('day_of_week')['registered'].mean())
@@ -231,28 +251,88 @@ class DataUtils:
         df['count_log'] = np.log(df[['count']] + 1)
 
         # Spitting data into input features and labels
-        features = ['year', 'month_impact', 'day_of_week_reg', 'day_of_week_cas', 'cont_time',
-                    'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity', 'weather']
+        features = ['year', 'month_impact', 'day_of_week_reg', 'day_of_week_cas', 'cont_time', 'hour_reg',
+                    'hour_cas', 'workingday', 'holiday', 'temp', 'humidity', 'weather','dataset']
 
-        datasetX = df[features]
-        datasetX_pred = df_to_predict[features]
+        df_train_X = df[features]
+        df_test_X = df_to_predict[features]
         datasetY = df[['count','count_log']].astype(float)
 
-        #datasetX = df.drop(['casual', 'registered', 'count', 'datetime', 'windspeed', 'atemp', 'season', 'month'], 1)
-        #datasetX_pred = df_to_predict.drop(['datetime', 'windspeed', 'atemp', 'season'], 1)
+        #df_train_X = df.drop(['casual', 'registered', 'count', 'datetime', 'windspeed', 'atemp', 'season', 'month'], 1)
+        #df_test_X = df_to_predict.drop(['datetime', 'windspeed', 'atemp', 'season'], 1)
         # print(datasetY.head(10))
 
         # Normalizing inputs
-        datasetX = (datasetX - datasetX.min() - (datasetX.max() - datasetX.min()) / 2) / (
-        (datasetX.max() - datasetX.min()) / 2)
-        datasetX_pred = (datasetX_pred - datasetX_pred.min() - (datasetX_pred.max() - datasetX_pred.min()) / 2) / (
-        (datasetX_pred.max() - datasetX_pred.min()) / 2)
-        #print(df_to_predict[['datetime']])
+        df_merged = df_train_X.append(df_test_X)
+        print(df_merged)
+        df_merged = (df_merged - df_merged.min() - (df_merged.max() - df_merged.min()) / 2) / (
+        (df_merged.max() - df_merged.min()) / 2)
+        
+        #Recovering train & test sets
+        df_train_X = df_merged[df_merged['dataset'] == -1].drop(['dataset'],1)
+        df_test_X = df_merged[df_merged['dataset'] == 1].drop(['dataset'],1)
+
         dataset_pred_date = df_to_predict[['datetime']]
 
-        #datasetX = datasetX.drop(['day_of_week'], 1)
-        #datasetX_pred = datasetX_pred.drop(['day_of_week'], 1)
+        print("DF loaded, columns:", df_train_X.columns.values,", shape:", df_train_X.shape)
 
-        print("DF loaded, columns:", datasetX.columns.values,", shape:", datasetX.shape)
+        return df_train_X,datasetY,df_test_X,dataset_pred_date
 
-        return datasetX,datasetY,datasetX_pred,dataset_pred_date
+    @staticmethod
+    def get_processed_df(train_path, test_path):
+
+        # Reading datasets
+        df_train = pd.read_csv(train_path)
+        df_train['dataset'] = 'train'
+        df_test = pd.read_csv(test_path)
+        df_test['dataset'] = 'test'
+        # combine train and test data into one df
+        df = df_train.append(df_test)
+
+        # lowercase column names
+        df.columns = map(str.lower, df.columns)
+
+        dt = pd.DatetimeIndex(df['datetime'])
+
+        # df['registered_log'] = df['registered']
+        # df['casual_log'] = df['casual']
+
+        #Parsing datetime
+        df['date'] = dt.date
+        df['day'] = dt.day
+        df['month'] = dt.month
+        df['year'] = dt.year
+        df['hour'] = dt.hour
+        df['dow'] = dt.dayofweek
+        df['woy'] = dt.weekofyear
+
+        # add a count_season column using join
+        by_season = df[df['dataset'] == 'train'].groupby('season')[['count']].agg(sum)
+        by_season.columns = ['count_season']
+        df = df.join(by_season, on='season')
+
+        #Getting train,val,test sets
+        df_train = df[(df['dataset'] == 'train') & (df['day'] < 15)]
+        df_train = df_train.drop(['dataset','datetime'],1)
+        df_val = df[(df['dataset'] == 'train') & (df['day'] >= 15)]
+        df_val = df_val.drop(['dataset', 'datetime'], 1)
+        df_test = df[df['dataset'] == 'test'].drop(['dataset'],1)
+
+        #Diving datasets to input and output
+        df_train_x = df_train[['year','month','day','hour','dow','woy','count_season']]
+        df_train_y = df_train[['count']]
+        df_val_x = df_val[['year','month','day','hour','dow','woy','count_season']]
+        df_val_y = df_val[['count']]
+        df_test_x = df_test[['year','month','day','hour','dow','woy','count_season']]
+        df_test_date = df_test[['datetime']]
+        df_x = df[['year','month','day','hour','dow','woy','count_season']]
+        df_y = df[['count']]
+
+        #Normalization
+        df_train_x = (df_train_x - df_x.min() - (df_x.max() - df_x.min()) / 2) / ((df_x.max() - df_x.min()) / 2)
+        df_val_x = (df_val_x - df_x.min() - (df_x.max() - df_x.min()) / 2) / ((df_x.max() - df_x.min()) / 2)
+        df_test_x = (df_test_x - df_x.min() - (df_x.max() - df_x.min()) / 2) / ((df_x.max() - df_x.min()) / 2)
+
+        print("Loaded datasets with sizes(train,val,test):",df_train.shape,df_val.shape,df_test.shape)
+
+        return df_train_x.astype(float), df_train_y.astype(float), df_val_x.astype(float), df_val_y.astype(float), df_test_x, df_test_date
