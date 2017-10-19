@@ -32,10 +32,10 @@ def rmsle(y_pred,y_true):
     return (root_msle)
 
 if __name__ == '__main__':
-    #gammas = np.linspace(0.1,0.2,20)
-    gamma = 0.105
-    #Cs = np.linspace(100,1000,10)
-    Cs=[150]
+    #gammas = np.linspace(0.1,0.15,50)
+    gamma = 0.1375
+    #Cs = np.linspace(115,200,50)
+    Cs=[145]
     reverse_opts = [False]
 
     tested_params = Cs
