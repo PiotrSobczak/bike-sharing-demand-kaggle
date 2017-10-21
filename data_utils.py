@@ -225,6 +225,37 @@ class DataUtils:
         # Data randomization(shuffling)
         # df = df.sample(frac=1).reset_index(drop=True)
 
+        #Including holidays and tax days
+        #black friday
+        df.loc[(df['year'] == 2011) & (df['month'] == 11) & (df['day_of_month'] == 25), 'workingday'] = 0
+        df.loc[(df['year'] == 2012) & (df['month'] == 11) & (df['day_of_month'] == 23), 'workingday'] = 0
+        df.loc[(df['year'] == 2011) & (df['month'] == 11) & (df['day_of_month'] == 25), 'holiday'] = 1
+        df.loc[(df['year'] == 2012) & (df['month'] == 11) & (df['day_of_month'] == 23), 'holiday'] = 1
+
+        #christmas and new year
+        df.loc[(df['month'] == 12) & ((df['day_of_month'] == 24) |
+                                      (df['day_of_month'] == 26) |
+                                      (df['day_of_month'] == 31)), 'holiday'] = 1
+        df.loc[(df['month'] == 12) & ((df['day_of_month'] == 24) |
+                                      (df['day_of_month'] == 31)), 'working_day'] = 0
+
+        #tax days
+        df.loc[(df['year'] == 2011) & (df['month'] == 4) & (df['day_of_month'] == 15), 'workingday'] = 1
+        df.loc[(df['year'] == 2012) & (df['month'] == 4) & (df['day_of_month'] == 16), 'workingday'] = 1
+        df.loc[(df['year'] == 2011) & (df['month'] == 4) & (df['day_of_month'] == 15), 'holiday'] = 0
+        df.loc[(df['year'] == 2012) & (df['month'] == 4) & (df['day_of_month'] == 15), 'holiday'] = 0
+
+        #natural disasters
+
+        # storms
+        df.loc[(df['year'] == 2012) & (df['month'] == 5) & (df['day_of_month'] == 21), 'holiday'] = 1
+
+        # tornado maryland
+        df.loc[(df['year'] == 2012) & (df['month'] == 6) & (df['day_of_month'] == 1), 'holiday'] = 1
+
+        #hurricane sandy
+        df.loc[(df['year'] == 2012) & (df['month'] == 10) & (df['day_of_month'] == 30), 'holiday'] = 1
+
         # Logarithmic transformation
         df['count_log'] = np.log(df[['count']] + 1)
 
