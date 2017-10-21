@@ -32,11 +32,11 @@ def rmsle(y_pred,y_true):
     return (root_msle)
 
 if __name__ == '__main__':
-    #gammas = np.linspace(0.07,0.1,30)
-    gamma = 0.085
-    #Cs = np.linspace(125,165,25)
-    Cs=[145]
-    #C = 145
+    #gammas = np.linspace(0.0769,0.077,20)
+    gamma = 0.07696
+    Cs = np.linspace(125,165,16)
+    #Cs=[145]
+   # C = 145
     reverse_opts = [False]
 
     tested_params = Cs
@@ -52,12 +52,12 @@ if __name__ == '__main__':
             for reverse in reverse_opts:
                 #Getting seperate train and val datasets to control data distribution
                 #train_x,train_y,Y_train_log,val_x,val_y = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
-                df_x,df_y,df_y_log,train_x, train_y, train_y_log,val_x, val_y,test_x,test_date_df = du.get_processed_df('data/train.csv', 'data/test.csv')
+                df_x,_,df_y_log,train_x, train_y, train_y_log,val_x, val_y,test_x,test_date_df = du.get_processed_df('data/train.csv', 'data/test.csv')
 
                 #Training our regression model
                 regressor = SVR(kernel='rbf', C=C, gamma=gamma)
                 #regressor.fit(X_train, Y_train_log)
-                regressor.fit(df_x, df_y_log)
+                regressor.fit(train_x, train_y_log)
 
                 #Making predictions on train set
                 predictions_train_log = regressor.predict(train_x)
@@ -73,11 +73,10 @@ if __name__ == '__main__':
                 val_error = rmsle(predictions_val,val_y)
                 val_error_hist[i] += val_error
 
-                #Making predictions on test set and setting negative results to zero
+                #Making predictions on test set and saving them
                 predictions_test_log = regressor.predict(test_x)
                 predictions_test = np.exp(predictions_test_log) - 1
                 predictions_test = np.maximum(0,predictions_test)
-
                 test_date_df['count'] = predictions_test
                 test_date_df.to_csv('predictions.csv', index=False)
 
