@@ -178,7 +178,27 @@ class DataUtils:
         return X_train, Y_train, Y_train_log, X_val, Y_val
 
     @staticmethod
-    def get_processed_df(train_path, test_path,output_cols = ['count']):
+    def split_datasets(df,features,output_cols,val_data_from_beg = False):
+        df_train_val_X = df.loc[df['dataset'] == -1, features]
+        if val_data_from_beg is False:
+            df_train_val_X.loc[(df_train_val_X['dataset'] == -1) & (df_train_val_X['day_of_month'] >= 16), 'dataset'] = 0
+            df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] < 16), output_cols]
+            df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] >= 16), output_cols]
+
+        if val_data_from_beg is True:
+            df_train_val_X.loc[(df_train_val_X['dataset'] == -1) & (df_train_val_X['day_of_month'] <= 4), 'dataset'] = 0
+            df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] > 4), output_cols]
+            df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] <= 4), output_cols]
+
+        df_Y = df.loc[df['dataset'] == -1, output_cols]
+        df_Y_log = np.log(df_Y+1)
+        df_train_Y_log = np.log(df_train_Y+1)
+        df_test_X = df.loc[df['dataset'] == 1, features]
+
+        return df_train_val_X,df_train_Y,df_train_Y_log,df_val_Y,df_test_X,df_Y,df_Y_log,df_train_val_X
+
+    @staticmethod
+    def get_processed_df(train_path, test_path,output_cols = ['count'],val_data_from_beg = True):
         # Reading datasets
         df_train = pd.read_csv(train_path)
         df_train['dataset'] = -1
@@ -263,19 +283,25 @@ class DataUtils:
         features = ['year', 'month_impact', 'day_of_week_reg', 'day_of_week_cas', 'cont_time', 'hour',
                     'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity', 'weather', 'dataset', 'day_of_month']
 
-        df_train_X = df.loc[df['dataset'] == -1, features]
-        # df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] < 16), 'count']
-        df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] < 16), output_cols]
-        df_train_Y_log = np.log(df_train_Y+1)
-        df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] >= 16), output_cols]
-        df_test_X = df.loc[df['dataset'] == 1, features]
-        df_Y = df.loc[df['dataset'] == -1, output_cols]
-        df_Y_log = np.log(df_Y+1)
+        df_train_val_X,df_train_Y,df_train_Y_log,df_val_Y,df_test_X,df_Y,df_Y_log,df_train_val_X = DataUtils.split_datasets(
+            df,
+            features,
+            output_cols,
+            val_data_from_beg)
+
+        # df_train_val_X = df.loc[df['dataset'] == -1, features]
+        # df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] < 16), output_cols]
+        # df_train_Y_log = np.log(df_train_Y+1)
+        # df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] >= 16), output_cols]
+        # df_test_X = df.loc[df['dataset'] == 1, features]
+        # df_Y = df.loc[df['dataset'] == -1, output_cols]
+        # df_Y_log = np.log(df_Y+1)
+
         # Setting validation set
-        df_train_X.loc[(df_train_X['dataset'] == -1) & (df_train_X['day_of_month'] >= 16), 'dataset'] = 0
+        #df_train_val_X.loc[(df_train_val_X['dataset'] == -1) & (df_train_val_X['day_of_month'] >= 16), 'dataset'] = 0
 
         # Normalizing inputs
-        df_merged = df_train_X.append(df_test_X)
+        df_merged = df_train_val_X.append(df_test_X)
         df_merged = (df_merged - df_merged.min() - (df_merged.max() - df_merged.min()) / 2) / ((df_merged.max() - df_merged.min()) / 2)
 
         # Recovering train & test sets
