@@ -178,7 +178,7 @@ class DataUtils:
         return X_train, Y_train, Y_train_log, X_val, Y_val
 
     @staticmethod
-    def get_processed_df(train_path, test_path):
+    def get_processed_df(train_path, test_path,output_cols = ['count']):
         # Reading datasets
         df_train = pd.read_csv(train_path)
         df_train['dataset'] = -1
@@ -264,11 +264,12 @@ class DataUtils:
                     'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity', 'weather', 'dataset', 'day_of_month']
 
         df_train_X = df.loc[df['dataset'] == -1, features]
-        df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] < 16), 'count']
+        # df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] < 16), 'count']
+        df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] < 16), output_cols]
         df_train_Y_log = np.log(df_train_Y+1)
-        df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] >= 16), 'count']
+        df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] >= 16), output_cols]
         df_test_X = df.loc[df['dataset'] == 1, features]
-        df_Y = df.loc[df['dataset'] == -1, 'count']
+        df_Y = df.loc[df['dataset'] == -1, output_cols]
         df_Y_log = np.log(df_Y+1)
         # Setting validation set
         df_train_X.loc[(df_train_X['dataset'] == -1) & (df_train_X['day_of_month'] >= 16), 'dataset'] = 0

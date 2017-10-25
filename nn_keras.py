@@ -10,67 +10,74 @@ from data_utils import DataUtils as du
 TOTAL_DATASET_SIZE = 10887
 
 def rmsle(y_true, y_pred):
-    return KB.sqrt(KB.mean(KB.square(KB.log(y_pred+1) - KB.log(y_true+1)), axis=-1))
+    print(y_pred,y_pred.shape)
+    #,np.sum(y_pred,y_pred.shape)
+    #y_pred = KB.sum(y_pred,axis=1)
+    return KB.sqrt(KB.mean(KB.square(KB.log(y_pred+1) - KB.log(y_true+1))))
 
-def norm_arr(array):
-    return (array - array.min() - (array.max() - array.min()) / 2) / ((array.max() - array.min()) / 2)
+if __name__ == '__main__':
+    output_columns = ['registered', 'casual']
 
-df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
-        'data/train.csv', 'data/test.csv')
+    df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = \
+        du.get_processed_df('data/train.csv', 'data/test.csv',output_cols=output_columns)
 
-df_x = np.array(df_x)
-df_y_log = np.array(df_y_log)
-train_x = np.array(train_x)
-train_y = np.array(train_y)
-train_y_log = np.array(train_y_log)
-val_x = np.array(val_x)
-val_y = np.array(val_y)
-test_x = np.array(test_x)
+    print("Dataset loaded, train_setX:",train_x.shape,", train_setY:",train_y.shape,", val_setX:",val_x.shape,", val_setY:",val_y.shape)
 
-deep_layers_size = 10
+    df_x = np.array(df_x)
+    df_y_log = np.array(df_y_log)
+    train_x = np.array(train_x)
+    train_y = np.array(train_y)
+    train_y_log = np.array(train_y_log)
+    val_x = np.array(val_x)
+    val_y = np.array(val_y)
+    test_x = np.array(test_x)
 
-#Defining our NN model
-model = Sequential()
-model.add(Dense(units=deep_layers_size, input_dim=13,kernel_initializer='he_normal',
-                bias_initializer='zeros'))
-model.add(Activation("tanh"))
-model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
-                bias_initializer='zeros'))
-model.add(Activation("tanh"))
-model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
-                bias_initializer='zeros'))
-model.add(Activation("tanh"))
-model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
-                bias_initializer='zeros'))
-model.add(Activation("tanh"))
-model.add(Dense(units=3,kernel_initializer='he_normal',
-                bias_initializer='zeros'))
-model.add(Activation("relu"))
-model.compile(loss=rmsle, optimizer='adam')
+    deep_layers_size = 10
 
-#Defining checkpoint and callbacks to save the best set of weights and limit printing
-checkpoint = ModelCheckpoint('best_weights.hdf5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
+    #Defining our NN model
+    model = Sequential()
+    model.add(Dense(units=deep_layers_size, input_dim=13,kernel_initializer='he_normal',
+                    bias_initializer='zeros'))
+    model.add(Activation("tanh"))
+    model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
+                    bias_initializer='zeros'))
+    model.add(Activation("tanh"))
+    model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
+                    bias_initializer='zeros'))
+    model.add(Activation("tanh"))
+    model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
+                    bias_initializer='zeros'))
+    model.add(Activation("tanh"))
+    model.add(Dense(units=len(output_columns),kernel_initializer='he_normal',
+                    bias_initializer='zeros'))
+    model.add(Activation("relu"))
+    model.compile(loss=rmsle, optimizer='adam')
 
-#Start training
-history_callback = model.fit(train_x, train_y, epochs=10000, batch_size=64,validation_data=(val_x,val_y),verbose=2,callbacks=callbacks_list)
+    #Defining checkpoint and callbacks to save the best set of weights and limit printing
+    checkpoint = ModelCheckpoint('best_weights.hdf5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    callbacks_list = [checkpoint]
 
-#Recovering val_loss history and training loss history from callbacks to arrays
-loss_history = history_callback.history["loss"]
-val_loss_history = history_callback.history["val_loss"]
+    #Start training
+    history_callback = model.fit(train_x, train_y, epochs=10000, batch_size=64,validation_data=(val_x,val_y),verbose=2,callbacks=callbacks_list)
 
-np.savetxt("error_plot.csv", [loss_history,val_loss_history], delimiter=",")
+    #Recovering val and train loss history from callbacks
+    loss_history = history_callback.history["loss"]
+    val_loss_history = history_callback.history["val_loss"]
 
-#Loading best model
-model.load_weights('best_weights.hdf5')
+    np.savetxt("error_plot.csv", [loss_history,val_loss_history], delimiter=",")
 
-#Making predictionsand saving them to csv
-predictions = model.predict(np.array(test_x))
-predictions_count = predictions[:,-1]
-test_date_df['count'] = predictions_count
-test_date_df.to_csv('predictions_keras_nn.csv', index=False)
+    #Loading best model
+    model.load_weights('best_weights.hdf5')
 
-#Plotting training loss and validation loss to control overfitting
-plt.plot(loss_history)
-plt.plot(val_loss_history)
-plt.show()
+    #Making predictionsand saving them to csv
+    predictions = model.predict(test_x)
+    if output_columns == ['registered','casual']:
+        test_date_df['count'] = np.sum(predictions,axis=1)
+    elif len(output_columns) == 1:
+        test_date_df['count'] = predictions
+    test_date_df.to_csv('predictions_keras_nn.csv', index=False)
+
+    #Plotting training loss and validation loss to control overfitting
+    plt.plot(loss_history)
+    plt.plot(val_loss_history)
+    plt.show()
