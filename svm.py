@@ -32,14 +32,28 @@ def rmsle(y_pred,y_true):
     return (root_msle)
 
 if __name__ == '__main__':
-    #gammas = np.linspace(0.0769,0.077,20)
-    gamma = 0.07696
-    Cs = np.linspace(125,165,16)
+    df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
+        'data/train.csv', 'data/test.csv',output_cols=['registered','casual','count'])
+
+    train_y_log_reg = np.array(train_y_log[['registered']]).reshape((train_y_log.shape[0],))
+    train_y_log_cas = np.array(train_y_log[['casual']]).reshape((train_y_log.shape[0],))
+    train_y = np.array(train_y['count']).reshape((train_y.shape[0],))
+    val_y = np.array(val_y['count']).reshape((val_y.shape[0],))
+    df_y_log_reg = np.array(df_y_log[['registered']]).reshape((df_y_log.shape[0],))
+    df_y_log_cas = np.array(df_y_log[['casual']]).reshape((df_y_log.shape[0],))
+
+    gammas = np.linspace(0.0764,0.0772,10)
+    gamma_cas = 0.015
+    C_cas = 150
+    gamma_reg = 0.0769
+    C_reg = 143
+    #gamma = 0.07696
+    #Cs = np.linspace(130,170,10)
     #Cs=[145]
-   # C = 145
+    #C = 145
     reverse_opts = [False]
 
-    tested_params = Cs
+    tested_params = [C_reg]
     val_error_hist = np.zeros(len(tested_params))
     train_error_hist = np.zeros(len(tested_params))
 
@@ -47,47 +61,49 @@ if __name__ == '__main__':
     # svr_lin = SVR(kernel='linear', C=1000)
     # svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=gamma)
 
-    for i,C in enumerate(tested_params):
+    for i,C_reg in enumerate(tested_params):
         for name in ["Gaussian"]:
-            for reverse in reverse_opts:
-                #Getting seperate train and val datasets to control data distribution
-                #train_x,train_y,Y_train_log,val_x,val_y = du.get_sep_datasets(datasetX,datasetY,TRAIN_SIZE,reverse_data_order=reverse)
-                df_x,_,df_y_log,train_x, train_y, train_y_log,val_x, val_y,test_x,test_date_df = du.get_processed_df('data/train.csv', 'data/test.csv')
+            #Training our regression model
+            regressor_reg = SVR(kernel='rbf', C=C_reg, gamma=gamma_reg)
+            regressor_cas = SVR(kernel='rbf', C=C_cas, gamma=gamma_cas)
+            regressor_reg.fit(df_x, df_y_log_reg)
+            regressor_cas.fit(df_x, df_y_log_cas)
 
-                #Training our regression model
-                regressor = SVR(kernel='rbf', C=C, gamma=gamma)
-                #regressor.fit(X_train, Y_train_log)
-                regressor.fit(train_x, train_y_log)
+            #Making predictions on train set
+            predictions_train_log_reg = regressor_reg.predict(train_x)
+            predictions_train_reg = np.exp(predictions_train_log_reg) - 1
+            predictions_train_log_cas = regressor_cas.predict(train_x)
+            predictions_train_cas = np.exp(predictions_train_log_cas) - 1
+            predictions_train = np.maximum(0, predictions_train_reg) + np.maximum(0, predictions_train_cas)
+            #predictions_train_reg = np.maximum(0, predictions_train_reg)
+            train_error = rmsle(predictions_train,train_y)
+            train_error_hist[i] += train_error
 
-                #Making predictions on train set
-                predictions_train_log = regressor.predict(train_x)
-                predictions_train = np.exp(predictions_train_log) - 1
-                predictions_train = np.maximum(0, predictions_train)
-                train_error = rmsle(predictions_train,train_y)
-                train_error_hist[i] += train_error
+            # Making predictions on val set
+            predictions_val_log_reg = regressor_reg.predict(val_x)
+            predictions_val_reg = np.exp(predictions_val_log_reg) - 1
+            predictions_val_log_cas = regressor_cas.predict(val_x)
+            predictions_val_cas = np.exp(predictions_val_log_cas) - 1
+            predictions_val = np.maximum(0, predictions_val_reg) + np.maximum(0, predictions_val_cas)
+            #predictions_val = np.maximum(0, predictions_val_reg)
+            val_error = rmsle(predictions_val,val_y)
+            val_error_hist[i] += val_error
 
-                # Making predictions on val set
-                predictions_val_log = regressor.predict(val_x)
-                predictions_val = np.exp(predictions_val_log) - 1
-                predictions_val = np.maximum(0, predictions_val)
-                val_error = rmsle(predictions_val,val_y)
-                val_error_hist[i] += val_error
+            #Making predictions on test set and saving them
+            predictions_test_log_reg = regressor_reg.predict(test_x)
+            predictions_test_reg = np.exp(predictions_test_log_reg) - 1
+            predictions_test_log_cas = regressor_cas.predict(test_x)
+            predictions_test_cas = np.exp(predictions_test_log_cas) - 1
+            predictions_test = np.maximum(0, predictions_test_reg) + np.maximum(0, predictions_test_cas)
+            test_date_df['count'] = predictions_test
+            test_date_df.to_csv('predictions_svm.csv', index=False)
 
-                #Making predictions on test set and saving them
-                predictions_test_log = regressor.predict(test_x)
-                predictions_test = np.exp(predictions_test_log) - 1
-                predictions_test = np.maximum(0,predictions_test)
-                test_date_df['count'] = predictions_test
-                test_date_df.to_csv('predictions.csv', index=False)
+        #Computing avg error from reversed and non-reversed data
+        val_error_hist[i] = val_error_hist[i] / len(reverse_opts)
+        train_error_hist[i] = train_error_hist[i] / len(reverse_opts)
 
-                # print(name, "kernel, gamma = ", gamma, ", data reversed = ", reverse,
-                #      ", Train error:", train_error, ", Val error:", val_error)
-
-            #Computing avg error from reversed and non-reversed data
-            val_error_hist[i] = val_error_hist[i] / len(reverse_opts)
-            train_error_hist[i] = train_error_hist[i] / len(reverse_opts)
-
-            print (name,"kernel, gamma = ",gamma,"C = ",C,", Train error:",train_error_hist[i],", Val error:",val_error_hist[i])
+        print (name,"kernel, gamma_cas = ",gamma_cas,", gamma_reg = ",gamma_reg,
+               ", C_cas = ",C_cas,", C_reg = ",C_reg,", Train error:",train_error_hist[i],", Val error:",val_error_hist[i])
 
     plt.plot(tested_params,val_error_hist)
     plt.plot(tested_params,train_error_hist)
