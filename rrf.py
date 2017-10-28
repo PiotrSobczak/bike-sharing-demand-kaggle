@@ -155,26 +155,10 @@ if __name__ == '__main__':
     (rf_p, rf_t, rf_score) = predict_on_validation_set(rf_model, rf_cols)
     print ("Rf val score:",rf_score)
 
-    params = {'n_estimators': 150, 'max_depth': 5, 'random_state': 0, 'min_samples_leaf' : 10, 'learning_rate': 0.1, 'subsample': 0.7, 'loss': 'ls'}
-    gbm_model = GradientBoostingRegressor(**params)
-    gbm_cols = [
-        'weather', 'temp', 'atemp', 'humidity', 'windspeed',
-        'holiday', 'workingday', 'season',
-        'hour', 'dow', 'year', 'ideal', 'count_season',
-        ]
-
-    (gbm_p, gbm_t, gbm_score) = predict_on_validation_set(gbm_model, gbm_cols)
-    print ("GB score:",gbm_score)
-
-    # the blend gives a better score on the leaderboard, even though it does not on the validation set
-    y_p = np.round(.2*rf_p + .8*gbm_p)
-    print ("RF+GB:",get_rmsle(y_p, rf_t))
-
     df_test = df[df['_data'] == 'test'].copy()
 
-    rf_pred = predict_on_test_set(rf_model, rf_cols)
-    gbm_pred = predict_on_test_set(gbm_model, gbm_cols)
-    y_pred = np.round(.2*rf_pred + .8*gbm_pred)
+    y_pred = predict_on_test_set(rf_model, rf_cols)
+
     # output predictions for submission
     df_test['count'] = y_pred
     final_df = df_test[['datetime', 'count']].copy()
