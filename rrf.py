@@ -27,27 +27,27 @@ def prep_data(data, input_cols):
     y_c = data['casual_log'].as_matrix()
     return X, y_r, y_c
 
-def predict_on_validation_set(model, input_cols):
-    data = get_data()
-
-    train, test = custom_train_test_split(data)
-
-    X_train, y_train_r, y_train_c = prep_data(train, input_cols)
-    X_test, y_test_r, y_test_c = prep_data(test, input_cols)
-
-    model_r = model.fit(X_train, y_train_r)
-    y_pred_r = np.exp(model_r.predict(X_test)) - 1
-
-    model_c = model.fit(X_train, y_train_c)
-    y_pred_c = np.exp(model_c.predict(X_test)) - 1
-
-    y_pred_comb = np.round(y_pred_r + y_pred_c)
-    y_pred_comb[y_pred_comb < 0] = 0
-
-    y_test_comb = np.exp(y_test_r) + np.exp(y_test_c) - 2
-
-    score = get_rmsle(y_pred_comb, y_test_comb)
-    return (y_pred_comb, y_test_comb, score)
+# def predict_on_validation_set(model, input_cols):
+#     data = get_data()
+#
+#     train, val = custom_train_test_split(data)
+#
+#     X_train, y_train_r, y_train_c = prep_data(train, input_cols)
+#     X_val, y_val_r, y_val_c = prep_data(val, input_cols)
+#
+#     model_r = model.fit(X_train, y_val_r)
+#     y_pred_r = np.exp(model_r.predict(X_val)) - 1
+#
+#     model_c = model.fit(X_train, y_val_c)
+#     y_pred_c = np.exp(model_c.predict(X_val)) - 1
+#
+#     y_pred_comb = np.round(y_pred_r + y_pred_c)
+#     y_pred_comb[y_pred_comb < 0] = 0
+#
+#     y_test_comb = np.exp(y_test_r) + np.exp(y_test_c) - 2
+#
+#     score = get_rmsle(y_pred_comb, y_test_comb)
+#     return (y_pred_comb, y_test_comb, score)
 
 # predict on test set & transform output back from log scale
 def predict_on_test_set(model, x_cols):
@@ -145,14 +145,36 @@ if __name__ == '__main__':
     df['sticky'] = df[['humidity', 'workingday']].apply(lambda x: (0, 1)[x['workingday'] == 1 and x['humidity'] >= 60], axis = 1)
 
     params = {'n_estimators': 1000, 'max_depth': 15, 'random_state': 0, 'min_samples_split' : 5, 'n_jobs': -1}
+
     rf_model = RandomForestRegressor(**params)
+
     rf_cols = [
         'weather', 'temp', 'atemp', 'windspeed',
         'workingday', 'season', 'holiday', 'sticky',
         'hour', 'dow', 'woy', 'peak'
     ]
 
-    (rf_p, rf_t, rf_score) = predict_on_validation_set(rf_model, rf_cols)
+    data = get_data()
+
+    train, val = custom_train_test_split(data)
+
+    X_train, y_train_r, y_train_c = prep_data(train, rf_cols)
+    X_val, y_val_r, y_val_c = prep_data(val, rf_cols)
+
+    model_r = rf_model.fit(X_train, y_train_r)
+    y_pred_r = np.exp(model_r.predict(X_val)) - 1
+
+    model_c = rf_model.fit(X_train, y_train_c)
+    y_pred_c = np.exp(model_c.predict(X_val)) - 1
+
+    y_pred_comb = np.round(y_pred_r + y_pred_c)
+    y_pred_comb[y_pred_comb < 0] = 0
+
+    y_val_comb = np.exp(y_val_r) + np.exp(y_val_c) - 2
+
+    rf_score = get_rmsle(y_pred_comb, y_val_comb)
+    #return (y_pred_comb, y_test_comb, score)
+
     print ("Rf val score:",rf_score)
 
     df_test = df[df['_data'] == 'test'].copy()
