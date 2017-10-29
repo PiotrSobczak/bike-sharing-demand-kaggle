@@ -19,23 +19,18 @@ if __name__ == '__main__':
 
     max_depth_params = np.arange(5,6,1)
     max_depth = 5
-    n_estimators_params = np.arange(117,118,1)
-    n_estimators = 150
+    n_estimators_params = np.arange(183,184,1)
+    n_estimators = 183
 
-    tested_params = max_depth_params
+    tested_params = n_estimators_params
 
     val_scores = np.zeros(len(tested_params))
     train_scores = np.zeros(len(tested_params))
 
-    for i,max_depth in enumerate(tested_params):
+    for i,n_estimators in enumerate(tested_params):
         params = {'n_estimators': n_estimators, 'max_depth': max_depth, 'random_state': 0, 'min_samples_leaf': 10, 'learning_rate': 0.1,
                   'subsample': 0.7, 'loss': 'ls'}
         gbm_model = GradientBoostingRegressor(**params)
-        # gbm_cols = [
-        #     'weather', 'temp', 'atemp', 'humidity', 'windspeed',
-        #     'holiday', 'workingday', 'season',
-        #     'hour', 'dow', 'year', 'ideal', 'count_season',
-        # ]
 
         # Training registered model and making predictions
         #print(train_y_log_reg,train_x)
