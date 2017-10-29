@@ -283,13 +283,10 @@ class DataUtils:
             (x['workingday'] == 1 and (x['hour'] == 8 or 17 <= x['hour'] <= 18 or 12 <= x['hour'] <= 12)) or (
             x['workingday'] == 0 and 10 <= x['hour'] <= 19)], axis=1)
 
-        df['ideal'] = df[['temp', 'windspeed']].apply(lambda x: (0, 1)[x['temp'] > 27 and x['windspeed'] < 30], axis=1)
-        df['sticky'] = df[['humidity', 'workingday']].apply(
-            lambda x: (0, 1)[x['workingday'] == 1 and x['humidity'] >= 60], axis=1)
-
         #Defining input features
         features = ['year', 'day_of_week_reg', 'day_of_week_cas', 'cont_time', 'hour',
-                     'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity', 'weather', 'dataset', 'day_of_month']
+                     'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity',
+                    'weather', 'dataset', 'day_of_month','peak']
 
         #Geting split train,val,test X,Y datasets
         df_train_val_X,df_train_Y,df_train_Y_log,df_val_Y,df_test_X,df_Y,df_Y_log,df_train_val_X = DataUtils.split_datasets(
