@@ -35,39 +35,30 @@ if __name__ == '__main__':
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
         'data/train.csv', 'data/test.csv',output_cols=['registered','casual','count'])
 
-    train_y_log_reg = np.array(train_y_log[['registered']]).reshape((train_y_log.shape[0],))
-    train_y_log_cas = np.array(train_y_log[['casual']]).reshape((train_y_log.shape[0],))
-    train_y = np.array(train_y['count']).reshape((train_y.shape[0],))
-    val_y = np.array(val_y['count']).reshape((val_y.shape[0],))
-    df_y_log_reg = np.array(df_y_log[['registered']]).reshape((df_y_log.shape[0],))
-    df_y_log_cas = np.array(df_y_log[['casual']]).reshape((df_y_log.shape[0],))
+    train_y_log_reg = np.array(train_y_log['registered'])
+    train_y_log_cas = np.array(train_y_log['casual'])
+    train_y = np.array(train_y['count'])
+    df_y_log_reg = np.array(df_y_log['registered'])
+    df_y_log_cas = np.array(df_y_log['casual'])
 
-    gammas = np.linspace(0.0764,0.0772,10)
     gamma_cas = 0.015
     C_cas = 150
     gamma_reg = 0.0769
     C_reg = 143
-    #gamma = 0.07696
-    #Cs = np.linspace(130,170,10)
-    #Cs=[145]
-    #C = 145
+
     reverse_opts = [False]
 
     tested_params = [C_reg]
     val_error_hist = np.zeros(len(tested_params))
     train_error_hist = np.zeros(len(tested_params))
 
-    # Definitions of other kernels one may want to use
-    # svr_lin = SVR(kernel='linear', C=1000)
-    # svr_poly = SVR(kernel='poly', C=1000, degree=2, gamma=gamma)
-
     for i,C_reg in enumerate(tested_params):
         for name in ["Gaussian"]:
             #Training our regression model
             regressor_reg = SVR(kernel='rbf', C=C_reg, gamma=gamma_reg)
             regressor_cas = SVR(kernel='rbf', C=C_cas, gamma=gamma_cas)
-            regressor_reg.fit(df_x, df_y_log_reg)
-            regressor_cas.fit(df_x, df_y_log_cas)
+            regressor_reg.fit(train_x, train_y_log_reg)
+            regressor_cas.fit(train_x, train_y_log_cas)
 
             #Making predictions on train set
             predictions_train_log_reg = regressor_reg.predict(train_x)
@@ -75,7 +66,6 @@ if __name__ == '__main__':
             predictions_train_log_cas = regressor_cas.predict(train_x)
             predictions_train_cas = np.exp(predictions_train_log_cas) - 1
             predictions_train = np.maximum(0, predictions_train_reg) + np.maximum(0, predictions_train_cas)
-            #predictions_train_reg = np.maximum(0, predictions_train_reg)
             train_error = rmsle(predictions_train,train_y)
             train_error_hist[i] += train_error
 
@@ -85,7 +75,6 @@ if __name__ == '__main__':
             predictions_val_log_cas = regressor_cas.predict(val_x)
             predictions_val_cas = np.exp(predictions_val_log_cas) - 1
             predictions_val = np.maximum(0, predictions_val_reg) + np.maximum(0, predictions_val_cas)
-            #predictions_val = np.maximum(0, predictions_val_reg)
             val_error = rmsle(predictions_val,val_y)
             val_error_hist[i] += val_error
 

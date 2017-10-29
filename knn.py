@@ -3,8 +3,8 @@ from data_utils import DataUtils as du
 import numpy as np
 import matplotlib.pyplot as plt
 
-num_k_neighbours = 5
-start_k_neighbours = 2
+num_k_neighbours = 1
+start_k_neighbours = 4
 
 val_errors = np.zeros(num_k_neighbours)
 train_errors = np.zeros(num_k_neighbours)
@@ -22,7 +22,9 @@ def rmsle(y_pred,y_true):
 if __name__ == '__main__':
 
     df_x, df_y, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
-        'data/train.csv', 'data/test.csv')
+        'data/train.csv', 'data/test.csv',output_cols=['count'],normalize=False)
+
+    val_y = np.reshape(val_y.as_matrix(),newshape=(val_y.shape[0],1))
 
     k_parameters = range(start_k_neighbours, start_k_neighbours + num_k_neighbours)
 

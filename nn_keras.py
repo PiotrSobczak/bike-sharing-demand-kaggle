@@ -4,16 +4,14 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.callbacks import ModelCheckpoint
 import keras.backend as KB
-from keras.layers import Dropout
 from data_utils import DataUtils as du
 
 TOTAL_DATASET_SIZE = 10887
 
 def rmsle(y_true, y_pred):
-    print(y_pred,y_pred.shape)
-    #,np.sum(y_pred,y_pred.shape)
-    #y_pred = KB.sum(y_pred,axis=1)
-    return KB.sqrt(KB.mean(KB.square(KB.log(y_pred+1) - KB.log(y_true+1))))
+    y_count_pred = KB.sum(y_pred,axis=1)
+    y_count_true = KB.sum(y_true,axis=1)
+    return KB.sqrt(KB.mean(KB.square(KB.log(y_count_pred+1) - KB.log(y_count_true+1))))
 
 if __name__ == '__main__':
     output_columns = ['registered', 'casual']
@@ -30,9 +28,12 @@ if __name__ == '__main__':
     train_y_log = np.array(train_y_log)
     val_x = np.array(val_x)
     val_y = np.array(val_y)
+    val_y = np.reshape(val_y, newshape=(val_y.shape[0], 1))
     test_x = np.array(test_x)
 
     deep_layers_size = 10
+
+
 
     #Defining our NN model
     model = Sequential()
