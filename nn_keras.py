@@ -33,8 +33,6 @@ if __name__ == '__main__':
 
     deep_layers_size = 10
 
-
-
     #Defining our NN model
     model = Sequential()
     model.add(Dense(units=deep_layers_size, input_dim=13,kernel_initializer='he_normal',
