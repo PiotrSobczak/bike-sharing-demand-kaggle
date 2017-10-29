@@ -16,13 +16,15 @@ if __name__ == '__main__':
     train_y_log_cas = train_y_log['casual'].as_matrix()
     train_y = train_y['count'].as_matrix()
 
-    max_depth_params = np.arange(10,50,1)
-    n_estimators = 1000
-
-    val_scores = np.zeros(len(max_depth_params))
-    train_scores = np.zeros(len(max_depth_params))
+    max_depth_params = np.arange(24,25,1)
+    max_depth = 26
+    n_estimators_params = np.arange(117,118,1)
+    n_estimators = 117
 
     tested_params = max_depth_params
+
+    val_scores = np.zeros(len(tested_params))
+    train_scores = np.zeros(len(tested_params))
 
     for i,max_depth in enumerate(tested_params):
 
@@ -55,10 +57,10 @@ if __name__ == '__main__':
         print ("Max depth:",max_depth,"Number of trees:",n_estimators,"Train score:",train_score,"Val score:",val_score)
 
         #Saving predictions to submission file
-        # y_pred_test = y_pred_test_reg + y_pred_test_cas
-        # test_date_df['count'] = y_pred_test
-        # test_date_df.to_csv('predictions_rrf.csv', index=False)
+        y_pred_test = y_pred_test_reg + y_pred_test_cas
+        test_date_df['count'] = y_pred_test
+        test_date_df.to_csv('predictions_rrf.csv', index=False)
 
-    plt.plot(max_depth_params,val_scores)
-    plt.plot(max_depth_params, train_scores)
+    plt.plot(tested_params,val_scores)
+    plt.plot(tested_params, train_scores)
     plt.show()
