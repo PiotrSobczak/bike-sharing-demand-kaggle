@@ -198,7 +198,7 @@ class DataUtils:
         return df_train_val_X,df_train_Y,df_train_Y_log,df_val_Y,df_test_X,df_Y,df_Y_log,df_train_val_X
 
     @staticmethod
-    def get_processed_df(train_path, test_path,output_cols = ['count'],val_data_from_beg = False):
+    def get_processed_df(train_path, test_path,output_cols = ['count'],val_data_from_beg = False,normalize = True):
         # Reading datasets
         df_train = pd.read_csv(train_path)
         df_train['dataset'] = -1
@@ -214,10 +214,10 @@ class DataUtils:
         df['month'] = dt.month
         df['year'] = dt.year
         df['hour'] = dt.hour
-        #df['day_of_week'] = dt.dayofweek #Does not include  Feb 29th
+        df['day_of_week'] = dt.dayofweek #Does not include  Feb 29th
         df['week_of_year'] = dt.weekofyear
 
-        df['day_of_week'] = df.date.apply(DataUtils.get_day_of_week)
+        #df['day_of_week'] = df.date.apply(DataUtils.get_day_of_week)
         df['cont_time'] = df.date.apply(DataUtils.datetime_to_total_days)
 
         # Getting month impact, which tells us how good is the month for bikes, far better than 'season' and is easier to learn than pure month value
@@ -263,7 +263,7 @@ class DataUtils:
         df.loc[(df['year'] == 2011) & (df['month'] == 4) & (df['day_of_month'] == 15), 'workingday'] = 1
         df.loc[(df['year'] == 2012) & (df['month'] == 4) & (df['day_of_month'] == 16), 'workingday'] = 1
         df.loc[(df['year'] == 2011) & (df['month'] == 4) & (df['day_of_month'] == 15), 'holiday'] = 0
-        df.loc[(df['year'] == 2012) & (df['month'] == 4) & (df['day_of_month'] == 15), 'holiday'] = 0
+        df.loc[(df['year'] == 2012) & (df['month'] == 4) & (df['day_of_month'] == 16), 'holiday'] = 0
 
         #natural disasters
 
@@ -283,6 +283,15 @@ class DataUtils:
             (x['workingday'] == 1 and (x['hour'] == 8 or 17 <= x['hour'] <= 18 or 12 <= x['hour'] <= 12)) or (
             x['workingday'] == 0 and 10 <= x['hour'] <= 19)], axis=1)
 
+        df['ideal'] = df[['temp', 'windspeed']].apply(lambda x: (0, 1)[x['temp'] > 27 and x['windspeed'] < 30], axis=1)
+        df['sticky'] = df[['humidity', 'workingday']].apply(
+            lambda x: (0, 1)[x['workingday'] == 1 and x['humidity'] >= 60], axis=1)
+
+        # add a count_season column using join
+        by_season = df[df['dataset'] == -1].groupby('season')[['count']].agg(sum)
+        by_season.columns = ['count_season']
+        df = df.join(by_season, on='season')
+
         #Defining input features
         features = ['year', 'day_of_week_reg', 'day_of_week_cas', 'cont_time', 'hour',
                      'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity',
@@ -295,15 +304,24 @@ class DataUtils:
             output_cols,
             val_data_from_beg)
 
-        # Normalizing inputs
-        df_merged = df_train_val_X.append(df_test_X)
-        df_merged = (df_merged - df_merged.min() - (df_merged.max() - df_merged.min()) / 2) / ((df_merged.max() - df_merged.min()) / 2)
+        #df_train_val_X[df_train_val_X['dataset'] == 0].drop(['dataset', 'day_of_month'], 1).to_csv('check_my_gb_features.csv',index=False)
 
-        # Recovering train & test sets
-        df_train_X = df_merged[df_merged['dataset'] == -1].drop(['dataset','day_of_month'], 1)
-        df_val_X = df_merged[df_merged['dataset'] == 0].drop(['dataset','day_of_month'], 1)
-        df_test_X = df_merged[df_merged['dataset'] == 1].drop(['dataset','day_of_month'], 1)
-        df_X = df_merged[df_merged['dataset'] != 1].drop(['dataset','day_of_month'], 1)
+        if normalize is True:
+            # Normalizing inputs
+            df_merged = df_train_val_X.append(df_test_X)
+            df_merged = (df_merged - df_merged.min() - (df_merged.max() - df_merged.min()) / 2) / ((df_merged.max() - df_merged.min()) / 2)
+
+            # Recovering train & test sets
+            df_train_X = df_merged[df_merged['dataset'] == -1].drop(['dataset','day_of_month'], 1)
+            df_val_X = df_merged[df_merged['dataset'] == 0].drop(['dataset','day_of_month'], 1)
+            df_test_X = df_merged[df_merged['dataset'] == 1].drop(['dataset','day_of_month'], 1)
+            df_X = df_merged[df_merged['dataset'] != 1].drop(['dataset','day_of_month'], 1)
+
+        else:
+            df_train_X = df_train_val_X[df_train_val_X['dataset'] == -1].drop(['dataset','day_of_month'], 1)
+            df_val_X = df_train_val_X[df_train_val_X['dataset'] == 0].drop(['dataset','day_of_month'], 1)
+            df_X = df_train_val_X.drop(['dataset','day_of_month'], 1)
+            df_test_X = df_test_X.drop(['dataset', 'day_of_month'], 1)
 
         dataset_pred_date = df_test[['datetime']]
 
