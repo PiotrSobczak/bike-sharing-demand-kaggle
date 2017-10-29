@@ -215,7 +215,7 @@ class DataUtils:
         df['year'] = dt.year
         df['hour'] = dt.hour
         #df['day_of_week'] = dt.dayofweek #Does not include  Feb 29th
-        # df['week_of_year'] = dt.weekofyear
+        df['week_of_year'] = dt.weekofyear
 
         df['day_of_week'] = df.date.apply(DataUtils.get_day_of_week)
         df['cont_time'] = df.date.apply(DataUtils.datetime_to_total_days)
@@ -279,26 +279,24 @@ class DataUtils:
         # Logarithmic transformation
         df['count_log'] = np.log(df[['count']] + 1)
 
-        # Spitting data into input features and labels
-        features = ['year', 'month_impact', 'day_of_week_reg', 'day_of_week_cas', 'cont_time', 'hour',
-                    'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity', 'weather', 'dataset', 'day_of_month']
+        df['peak'] = df[['hour', 'workingday']].apply(lambda x: (0, 1)[
+            (x['workingday'] == 1 and (x['hour'] == 8 or 17 <= x['hour'] <= 18 or 12 <= x['hour'] <= 12)) or (
+            x['workingday'] == 0 and 10 <= x['hour'] <= 19)], axis=1)
 
+        df['ideal'] = df[['temp', 'windspeed']].apply(lambda x: (0, 1)[x['temp'] > 27 and x['windspeed'] < 30], axis=1)
+        df['sticky'] = df[['humidity', 'workingday']].apply(
+            lambda x: (0, 1)[x['workingday'] == 1 and x['humidity'] >= 60], axis=1)
+
+        #Defining input features
+        features = ['year', 'day_of_week_reg', 'day_of_week_cas', 'cont_time', 'hour',
+                     'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity', 'weather', 'dataset', 'day_of_month']
+
+        #Geting split train,val,test X,Y datasets
         df_train_val_X,df_train_Y,df_train_Y_log,df_val_Y,df_test_X,df_Y,df_Y_log,df_train_val_X = DataUtils.split_datasets(
             df,
             features,
             output_cols,
             val_data_from_beg)
-
-        # df_train_val_X = df.loc[df['dataset'] == -1, features]
-        # df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] < 16), output_cols]
-        # df_train_Y_log = np.log(df_train_Y+1)
-        # df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] >= 16), output_cols]
-        # df_test_X = df.loc[df['dataset'] == 1, features]
-        # df_Y = df.loc[df['dataset'] == -1, output_cols]
-        # df_Y_log = np.log(df_Y+1)
-
-        # Setting validation set
-        #df_train_val_X.loc[(df_train_val_X['dataset'] == -1) & (df_train_val_X['day_of_month'] >= 16), 'dataset'] = 0
 
         # Normalizing inputs
         df_merged = df_train_val_X.append(df_test_X)
