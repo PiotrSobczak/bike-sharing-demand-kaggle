@@ -183,12 +183,12 @@ class DataUtils:
         if val_data_from_beg is False:
             df_train_val_X.loc[(df_train_val_X['dataset'] == -1) & (df_train_val_X['day_of_month'] >= 16), 'dataset'] = 0
             df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] < 16), output_cols]
-            df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] >= 16), output_cols]
+            df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] >= 16), 'count']
 
         if val_data_from_beg is True:
             df_train_val_X.loc[(df_train_val_X['dataset'] == -1) & (df_train_val_X['day_of_month'] <= 4), 'dataset'] = 0
             df_train_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] > 4), output_cols]
-            df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] <= 4), output_cols]
+            df_val_Y = df.loc[(df['dataset'] == -1) & (df['day_of_month'] <= 4), 'count']
 
         df_Y = df.loc[df['dataset'] == -1, output_cols]
         df_Y_log = np.log(df_Y+1)
@@ -198,7 +198,7 @@ class DataUtils:
         return df_train_val_X,df_train_Y,df_train_Y_log,df_val_Y,df_test_X,df_Y,df_Y_log,df_train_val_X
 
     @staticmethod
-    def get_processed_df(train_path, test_path,output_cols = ['count'],val_data_from_beg = True):
+    def get_processed_df(train_path, test_path,output_cols = ['count'],val_data_from_beg = False):
         # Reading datasets
         df_train = pd.read_csv(train_path)
         df_train['dataset'] = -1
