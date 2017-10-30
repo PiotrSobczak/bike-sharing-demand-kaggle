@@ -1,8 +1,6 @@
 from sklearn.svm import SVR
 import numpy as np
 from matplotlib import pyplot as plt
-import pandas as pd
-
 from data_utils import DataUtils as du
 TOTAL_DATASET_SIZE = 10887
 
@@ -33,7 +31,7 @@ def rmsle(y_pred,y_true):
 
 if __name__ == '__main__':
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
-        'data/train.csv', 'data/test.csv',output_cols=['registered','casual','count'])
+        '../data/train.csv', '../data/test.csv',output_cols=['registered','casual','count'])
 
     train_y_log_reg = np.array(train_y_log['registered'])
     train_y_log_cas = np.array(train_y_log['casual'])

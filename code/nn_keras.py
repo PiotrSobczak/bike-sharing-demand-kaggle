@@ -17,7 +17,7 @@ if __name__ == '__main__':
     output_columns = ['registered', 'casual']
 
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = \
-        du.get_processed_df('data/train.csv', 'data/test.csv',output_cols=output_columns)
+        du.get_processed_df('../data/train.csv', '../data/test.csv',output_cols=output_columns)
 
     print("Dataset loaded, train_setX:",train_x.shape,", train_setY:",train_y.shape,", val_setX:",val_x.shape,", val_setY:",val_y.shape)
 

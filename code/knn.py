@@ -22,7 +22,7 @@ def rmsle(y_pred,y_true):
 if __name__ == '__main__':
 
     df_x, df_y, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
-        'data/train.csv', 'data/test.csv',output_cols=['count'],normalize=False)
+        '../data/train.csv', '../data/test.csv',output_cols=['count'],normalize=False)
 
     val_y = np.reshape(val_y.as_matrix(),newshape=(val_y.shape[0],1))
 

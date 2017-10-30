@@ -297,10 +297,11 @@ class DataUtils:
         #             'weather', 'dataset', 'day_of_month','peak']
 
         features = [
-            'weather', 'temp', 'atemp', 'humidity', 'windspeed','holiday', 'season',
-            'hour', 'day_of_week', 'year', 'ideal', 'count_season', 'workingday'
-            #These are only for data split, they are dropped afterwards
-            'dataset', 'day_of_month',
+            'weather', 'temp', 'atemp', 'humidity', 'windspeed',
+            'holiday', 'workingday', 'season',
+            'hour', 'day_of_week', 'year', 'ideal', 'count_season',
+            # These are only for data split, they are dropped afterwards
+            'dataset', 'day_of_month'
         ]
 
         #Geting split train,val,test X,Y datasets
