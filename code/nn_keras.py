@@ -1,10 +1,11 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from keras.models import Sequential
-from keras.layers import Dense, Activation
+from keras.layers import Dense, Activation, Dropout
 from keras.callbacks import ModelCheckpoint
 import keras.backend as KB
 from data_utils import DataUtils as du
+from keras.optimizers import Adadelta
 
 TOTAL_DATASET_SIZE = 10887
 
@@ -17,7 +18,7 @@ if __name__ == '__main__':
     output_columns = ['registered', 'casual']
 
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = \
-        du.get_processed_df('../data/train.csv', '../data/test.csv',output_cols=output_columns)
+        du.get_processed_df('../data/train.csv', '../data/test.csv',output_cols=output_columns, model = "rrf")
 
     print("Dataset loaded, train_setX:",train_x.shape,", train_setY:",train_y.shape,", val_setX:",val_x.shape,", val_setY:",val_y.shape)
 
@@ -33,21 +34,24 @@ if __name__ == '__main__':
 
     deep_layers_size = 10
 
+    layer_sizes = {"input" : 13, "deep1" : 10, "deep2" : 10, "deep3" : 10, "deep4" : 50, "output" : 2}
+
     #Defining our NN model
     model = Sequential()
-    model.add(Dense(units=deep_layers_size, input_dim=13,kernel_initializer='he_normal',
+    model.add(Dense(units=layer_sizes["deep1"], input_dim=layer_sizes["input"],kernel_initializer='he_normal',
                     bias_initializer='zeros'))
     model.add(Activation("tanh"))
-    model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
+    model.add(Dense(units=layer_sizes["deep2"],kernel_initializer='he_normal',
                     bias_initializer='zeros'))
     model.add(Activation("tanh"))
-    model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
+    model.add(Dense(units=layer_sizes["deep3"],kernel_initializer='he_normal',
                     bias_initializer='zeros'))
     model.add(Activation("tanh"))
-    model.add(Dense(units=deep_layers_size,kernel_initializer='he_normal',
+    model.add(Dense(units=layer_sizes["deep4"],kernel_initializer='he_normal',
                     bias_initializer='zeros'))
     model.add(Activation("tanh"))
-    model.add(Dense(units=len(output_columns),kernel_initializer='he_normal',
+    model.add(Dropout(0.3))
+    model.add(Dense(units=layer_sizes["output"],kernel_initializer='he_normal',
                     bias_initializer='zeros'))
     model.add(Activation("relu"))
     model.compile(loss=rmsle, optimizer='adam')
@@ -57,7 +61,7 @@ if __name__ == '__main__':
     callbacks_list = [checkpoint]
 
     #Start training
-    history_callback = model.fit(train_x, train_y, epochs=10000, batch_size=64,validation_data=(val_x,val_y),verbose=2,callbacks=callbacks_list)
+    history_callback = model.fit(train_x, train_y, epochs=2000, batch_size=64,validation_data=(val_x,val_y),verbose=2,callbacks=callbacks_list)
 
     #Recovering val and train loss history from callbacks
     loss_history = history_callback.history["loss"]
