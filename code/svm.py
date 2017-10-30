@@ -31,7 +31,7 @@ def rmsle(y_pred,y_true):
 
 if __name__ == '__main__':
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
-        '../data/train.csv', '../data/test.csv',output_cols=['registered','casual','count'])
+        '../data/train.csv', '../data/test.csv',output_cols=['registered','casual','count'],model="svm")
 
     train_y_log_reg = np.array(train_y_log['registered'])
     train_y_log_cas = np.array(train_y_log['casual'])
@@ -44,19 +44,23 @@ if __name__ == '__main__':
     gamma_reg = 0.0769
     C_reg = 143
 
+    Cs = np.linspace(100,1000,10)
+    gammas = np.linspace(0.01,0.5,20)
+
     reverse_opts = [False]
 
     tested_params = [C_reg]
     val_error_hist = np.zeros(len(tested_params))
     train_error_hist = np.zeros(len(tested_params))
 
+    regressor_cas = SVR(kernel='rbf', C=C_cas, gamma=gamma_cas)
+    regressor_cas.fit(train_x, train_y_log_cas)
+
     for i,C_reg in enumerate(tested_params):
         for name in ["Gaussian"]:
             #Training our regression model
             regressor_reg = SVR(kernel='rbf', C=C_reg, gamma=gamma_reg)
-            regressor_cas = SVR(kernel='rbf', C=C_cas, gamma=gamma_cas)
             regressor_reg.fit(train_x, train_y_log_reg)
-            regressor_cas.fit(train_x, train_y_log_cas)
 
             #Making predictions on train set
             predictions_train_log_reg = regressor_reg.predict(train_x)

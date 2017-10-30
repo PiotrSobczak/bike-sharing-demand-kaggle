@@ -198,7 +198,21 @@ class DataUtils:
         return df_train_val_X,df_train_Y,df_train_Y_log,df_val_Y,df_test_X,df_Y,df_Y_log,df_train_val_X
 
     @staticmethod
-    def get_processed_df(train_path, test_path,output_cols = ['count'],val_data_from_beg = False,normalize = True):
+    def get_features(model):
+        if model == "gb" or model == "rrf":
+            features = ['weather', 'temp', 'atemp', 'humidity', 'windspeed', 'holiday', 'workingday',
+                        'season', 'hour', 'day_of_week', 'year', 'ideal', 'count_season',
+                        # These are only for data split, they are dropped afterwards
+                        'dataset', 'day_of_month']
+        else:
+            features = ['year', 'day_of_week_reg', 'day_of_week_cas', 'cont_time', 'hour_cas', 'hour_reg',
+                        'hour', 'workingday', 'holiday', 'temp', 'humidity', 'weather', 'peak',
+                        # These are only for data split, they are dropped afterwards
+                        'dataset', 'day_of_month']
+        return features
+
+    @staticmethod
+    def get_processed_df(train_path, test_path,output_cols = ['count'],val_data_from_beg = False,normalize = True, model = "default"):
         # Reading datasets
         df_train = pd.read_csv(train_path)
         df_train['dataset'] = -1
@@ -296,13 +310,8 @@ class DataUtils:
         # features = ['year', 'day_of_week', 'cont_time', 'hour', 'workingday', 'holiday', 'temp', 'humidity',
         #             'weather', 'dataset', 'day_of_month','peak']
 
-        features = [
-            'weather', 'temp', 'atemp', 'humidity', 'windspeed',
-            'holiday', 'workingday', 'season',
-            'hour', 'day_of_week', 'year', 'ideal', 'count_season',
-            # These are only for data split, they are dropped afterwards
-            'dataset', 'day_of_month'
-        ]
+
+        features = DataUtils.get_features(model = model)
 
         #Geting split train,val,test X,Y datasets
         df_train_val_X,df_train_Y,df_train_Y_log,df_val_Y,df_test_X,df_Y,df_Y_log,df_train_val_X = DataUtils.split_datasets(

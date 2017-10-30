@@ -10,7 +10,7 @@ def get_rmsle(y_pred, y_actual):
 
 if __name__ == '__main__':
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
-        '../data/train.csv', '../data/test.csv', output_cols=['registered', 'casual', 'count'])
+        '../data/train.csv', '../data/test.csv', output_cols=['registered', 'casual', 'count'],model = "rrf", normalize = True)
 
     train_y_log_reg = train_y_log['registered'].as_matrix()
     train_y_log_cas = train_y_log['casual'].as_matrix()
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     max_depth_params = np.arange(24,25,1)
     max_depth = 26
     n_estimators_params = np.arange(117,118,1)
-    n_estimators = 117
+    n_estimators = 1000
 
     tested_params = max_depth_params
 
