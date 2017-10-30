@@ -19,8 +19,8 @@ if __name__ == '__main__':
 
     max_depth_params = np.arange(5,6,1)
     max_depth = 5
-    n_estimators_params = np.arange(183,184,1)
-    n_estimators = 183
+    n_estimators_params = np.arange(150,151,1)
+    n_estimators = 150
 
     tested_params = n_estimators_params
 

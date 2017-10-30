@@ -293,9 +293,15 @@ class DataUtils:
         df = df.join(by_season, on='season')
 
         #Defining input features
-        features = ['year', 'day_of_week_reg', 'day_of_week_cas', 'cont_time', 'hour',
-                     'hour_reg', 'hour_cas', 'workingday', 'holiday', 'temp', 'humidity',
-                    'weather', 'dataset', 'day_of_month','peak']
+        # features = ['year', 'day_of_week', 'cont_time', 'hour', 'workingday', 'holiday', 'temp', 'humidity',
+        #             'weather', 'dataset', 'day_of_month','peak']
+
+        features = [
+            'weather', 'temp', 'atemp', 'humidity', 'windspeed','holiday', 'season',
+            'hour', 'day_of_week', 'year', 'ideal', 'count_season', 'workingday'
+            #These are only for data split, they are dropped afterwards
+            'dataset', 'day_of_month',
+        ]
 
         #Geting split train,val,test X,Y datasets
         df_train_val_X,df_train_Y,df_train_Y_log,df_val_Y,df_test_X,df_Y,df_Y_log,df_train_val_X = DataUtils.split_datasets(
