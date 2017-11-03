@@ -212,7 +212,7 @@ class DataUtils:
         return features
 
     @staticmethod
-    def get_processed_df(train_path, test_path,output_cols = ['count'],val_data_from_beg = False,normalize = True, model = "default"):
+    def get_processed_df(train_path, test_path,output_cols = ['count'],val_data_from_beg = False,normalize = True, model = "default", randomize = False):
         # Reading datasets
         df_train = pd.read_csv(train_path)
         df_train['dataset'] = -1
@@ -257,7 +257,8 @@ class DataUtils:
         df['hour_cas'] = df.datetime.apply(DataUtils.get_hour_casual)
 
         # Data randomization(shuffling)
-        # df = df.sample(frac=1).reset_index(drop=True)
+        if randomize is True:
+            df = df.sample(frac=1).reset_index(drop=True)
 
         #Including holidays and tax days
         #black friday

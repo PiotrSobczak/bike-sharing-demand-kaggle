@@ -11,16 +11,16 @@ def get_rmsle(y_pred, y_actual):
 
 if __name__ == '__main__':
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
-        '../data/train.csv', '../data/test.csv', output_cols=['registered', 'casual', 'count'],normalize = False)
+        '../data/train.csv', '../data/test.csv', output_cols=['registered', 'casual', 'count'],normalize = False,model="gb")
 
     train_y_log_reg = train_y_log['registered'].as_matrix()
     train_y_log_cas = train_y_log['casual'].as_matrix()
     train_y = train_y['count'].as_matrix()
 
-    max_depth_params = np.arange(5,6,1)
+    max_depth_params = np.arange(1,10,1)
     max_depth = 5
-    n_estimators_params = np.arange(150,151,1)
-    n_estimators = 150
+    n_estimators_params = np.arange(107,108,1)
+    n_estimators = 192
 
     tested_params = n_estimators_params
 

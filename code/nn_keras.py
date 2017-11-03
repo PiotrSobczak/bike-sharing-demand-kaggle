@@ -18,7 +18,7 @@ if __name__ == '__main__':
     output_columns = ['registered', 'casual']
 
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = \
-        du.get_processed_df('../data/train.csv', '../data/test.csv',output_cols=output_columns, model = "rrf")
+        du.get_processed_df('../data/train.csv', '../data/test.csv',output_cols=output_columns, model = "rrf",randomize=True)
 
     print("Dataset loaded, train_setX:",train_x.shape,", train_setY:",train_y.shape,", val_setX:",val_x.shape,", val_setY:",val_y.shape)
 
@@ -31,8 +31,6 @@ if __name__ == '__main__':
     val_y = np.array(val_y)
     val_y = np.reshape(val_y, newshape=(val_y.shape[0], 1))
     test_x = np.array(test_x)
-
-    deep_layers_size = 10
 
     layer_sizes = {"input" : 13, "deep1" : 10, "deep2" : 10, "deep3" : 10, "deep4" : 50, "output" : 2}
 
@@ -50,7 +48,7 @@ if __name__ == '__main__':
     model.add(Dense(units=layer_sizes["deep4"],kernel_initializer='he_normal',
                     bias_initializer='zeros'))
     model.add(Activation("tanh"))
-    model.add(Dropout(0.3))
+    model.add(Dropout(0.2))
     model.add(Dense(units=layer_sizes["output"],kernel_initializer='he_normal',
                     bias_initializer='zeros'))
     model.add(Activation("relu"))
