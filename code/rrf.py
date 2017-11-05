@@ -10,23 +10,23 @@ def get_rmsle(y_pred, y_actual):
 
 if __name__ == '__main__':
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
-        '../data/train.csv', '../data/test.csv', output_cols=['registered', 'casual', 'count'],model = "rrf", normalize = True)
+        '../data/train.csv', '../data/test.csv', output_cols=['registered', 'casual', 'count'],model = "rrf",normalize=False)
 
     train_y_log_reg = train_y_log['registered'].as_matrix()
     train_y_log_cas = train_y_log['casual'].as_matrix()
     train_y = train_y['count'].as_matrix()
 
-    max_depth_params = np.arange(24,25,1)
+    max_depth_params = np.arange(26,27,1)
     max_depth = 26
-    n_estimators_params = np.arange(117,118,1)
+    n_estimators_params = np.arange(300,301,1)
     n_estimators = 1000
 
-    tested_params = max_depth_params
+    tested_params = n_estimators_params
 
     val_scores = np.zeros(len(tested_params))
     train_scores = np.zeros(len(tested_params))
 
-    for i,max_depth in enumerate(tested_params):
+    for i,n_estimators in enumerate(tested_params):
 
         params = {'n_estimators': n_estimators, 'max_depth': max_depth, 'random_state': 0, 'min_samples_split' : 5, 'n_jobs': -1}
         rf_model = RandomForestRegressor(**params)

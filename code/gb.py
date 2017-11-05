@@ -17,10 +17,10 @@ if __name__ == '__main__':
     train_y_log_cas = train_y_log['casual'].as_matrix()
     train_y = train_y['count'].as_matrix()
 
-    max_depth_params = np.arange(1,10,1)
+    max_depth_params = np.arange(5,6,1)
     max_depth = 5
     n_estimators_params = np.arange(107,108,1)
-    n_estimators = 192
+    n_estimators = 107
 
     tested_params = n_estimators_params
 

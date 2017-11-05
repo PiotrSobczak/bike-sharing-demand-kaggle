@@ -199,9 +199,14 @@ class DataUtils:
 
     @staticmethod
     def get_features(model):
-        if model == "gb" or model == "rrf":
+        if model == "gb":
             features = ['weather', 'temp', 'atemp', 'humidity', 'windspeed', 'holiday', 'workingday',
                         'season', 'hour', 'day_of_week', 'year', 'ideal', 'count_season',
+                        # These are only for data split, they are dropped afterwards
+                        'dataset', 'day_of_month']
+        elif model == "rrf":
+            features = ['weather', 'temp', 'atemp', 'humidity', 'windspeed', 'holiday', 'workingday',
+                        'season', 'hour', 'day_of_week', 'year', 'ideal',
                         # These are only for data split, they are dropped afterwards
                         'dataset', 'day_of_month']
         else:
