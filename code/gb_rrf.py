@@ -9,13 +9,28 @@ def get_rmsle(y_pred, y_actual):
     mean_error = np.square(diff).mean()
     return np.sqrt(mean_error)
 
-def get_predicions(model,model_name,output_cols):
+def train_and_get_predicions(model_name,output_cols):
     df_x, _, df_y_log, train_x, train_y, train_y_log, val_x, val_y, test_x, test_date_df = du.get_processed_df(
-        '../data/train.csv', '../data/test.csv', output_cols=output_cols, model=model_name, normalize=False)
+        '../data/train.csv', '../data/test.csv', output_cols=output_cols,model = model_name,normalize=False)
 
     train_y_log_reg = train_y_log['registered'].as_matrix()
     train_y_log_cas = train_y_log['casual'].as_matrix()
     train_y = train_y['count'].as_matrix()
+
+    if model_name is "rrf":
+        max_depth = 26
+        n_estimators = 300
+        params = {'n_estimators': n_estimators, 'max_depth': max_depth, 'random_state': 0, 'min_samples_split' : 5, 'n_jobs': -1}
+        model = RandomForestRegressor(**params)
+
+    elif model_name is "gb":
+        max_depth = 5
+        n_estimators = 107
+        params_gb = {'n_estimators': n_estimators, 'max_depth': max_depth, 'random_state': 0,
+                     'min_samples_leaf': 10,
+                     'learning_rate': 0.1,
+                     'subsample': 0.7, 'loss': 'ls'}
+        model = GradientBoostingRegressor(**params_gb)
 
     # Training registered model and making predictions
     model_r = model.fit(train_x, train_y_log_reg)
@@ -23,13 +38,13 @@ def get_predicions(model,model_name,output_cols):
     y_pred_val_reg = np.exp(model_r.predict(val_x)) - 1
     y_pred_test_reg = np.exp(model_r.predict(test_x)) - 1
 
-    # Training casual model and making predictions
+    #Training casual model and making predictions
     model_c = model.fit(train_x, train_y_log_cas)
     y_pred_train_cas = np.exp(model_c.predict(train_x)) - 1
     y_pred_val_cas = np.exp(model_c.predict(val_x)) - 1
     y_pred_test_cas = np.exp(model_c.predict(test_x)) - 1
 
-    # Evaluating train and val score
+    #Evaluating train and val score
     y_pred_train = np.round(y_pred_train_reg + y_pred_train_cas)
     y_pred_train[y_pred_train < 0] = 0
     train_score = get_rmsle(y_pred_train, train_y)
@@ -38,32 +53,17 @@ def get_predicions(model,model_name,output_cols):
     y_pred_val[y_pred_val < 0] = 0
     val_score = get_rmsle(y_pred_val, val_y)
 
-    print(model_name, ": train score:", train_score,
-          ", val score:", val_score)
-
+    print ("Train score:",train_score,"Val score:",val_score)
     # Saving predictions to submission file
     y_pred_test = y_pred_test_reg + y_pred_test_cas
 
     return y_pred_test,test_date_df
 
 if __name__ == '__main__':
-    max_depth_gb = 5
-    n_estimators_gb = 107
-    max_depth_rrf = 26
-    n_estimators_rrf = 300
+    gb_pred, date_df = train_and_get_predicions(model_name="gb",output_cols=['registered', 'casual', 'count'])
+    rrf_pred, _ = train_and_get_predicions(model_name="rrf", output_cols=['registered', 'casual', 'count'])
 
-    params_gb = {'n_estimators': n_estimators_gb, 'max_depth': max_depth_gb, 'random_state': 0, 'min_samples_leaf': 10,
-              'learning_rate': 0.1,
-              'subsample': 0.7, 'loss': 'ls'}
-    gbm_model = GradientBoostingRegressor(**params_gb)
+    blend_pred = 0.8*gb_pred + 0.2*rrf_pred
 
-    gb_pred, date_df = get_predicions(model=gbm_model, model_name="gb",output_cols=['registered', 'casual', 'count'])
-
-    params_rrf = {'n_estimators': max_depth_rrf, 'max_depth': n_estimators_rrf, 'random_state': 0, 'min_samples_split': 5,
-              'n_jobs': -1}
-    rrf_model = RandomForestRegressor(**params_rrf)
-
-    rrf_pred, _ = get_predicions(model=rrf_model, model_name="rrf", output_cols=['registered', 'casual', 'count'])
-
-    date_df['count'] = 0.8*gb_pred + 0.2*rrf_pred
+    date_df['count'] = blend_pred
     date_df.to_csv('predictions_gb_rrf.csv', index=False)
