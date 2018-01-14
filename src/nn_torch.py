@@ -1,8 +1,9 @@
+import matplotlib.pyplot as plt
 import numpy as np
-from data_utils import DataUtils as du
 import torch
 from torch.autograd import Variable
-import matplotlib.pyplot as plt
+
+from data_utils import DataUtils as du
 
 #TOTAL_DATASET_SIZE = 10887
 epochs = 10000

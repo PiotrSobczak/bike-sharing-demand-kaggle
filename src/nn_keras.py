@@ -1,11 +1,11 @@
-import numpy as np
-from matplotlib import pyplot as plt
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
-from keras.callbacks import ModelCheckpoint
 import keras.backend as KB
+import numpy as np
+from keras.callbacks import ModelCheckpoint
+from keras.layers import Dense, Activation, Dropout
+from keras.models import Sequential
+from matplotlib import pyplot as plt
+
 from data_utils import DataUtils as du
-from keras.optimizers import Adadelta
 
 TOTAL_DATASET_SIZE = 10887
 

@@ -1,7 +1,8 @@
-from sklearn.neighbors import KNeighborsRegressor
-from data_utils import DataUtils as du
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.neighbors import KNeighborsRegressor
+
+from data_utils import DataUtils as du
 
 num_k_neighbours = 1
 start_k_neighbours = 4

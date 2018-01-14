@@ -1,7 +1,9 @@
-from sklearn.svm import SVR
 import numpy as np
 from matplotlib import pyplot as plt
+from sklearn.svm import SVR
+
 from data_utils import DataUtils as du
+
 TOTAL_DATASET_SIZE = 10887
 
 HOURS_IN_DAY = 24
