@@ -14,19 +14,20 @@ This project is my solution of [Bike Sharing Demand](https://www.kaggle.com/c/bi
 * SVR score: 0.44863 (gaussian kernel) </br>
 * KNN score: 0.55171 (k=4) </br></br>
 
-![alt text](https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/result_comparison.png)
+<img src="https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/result_comparison.png" width="900"></img>
 
 ## Example showing accuracy of the best model:
-![alt text](https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/predictions_72h.png)
+<p align="center">
+<img src="https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/predictions_72h.png" width="500"></img><p/>
 
 ## Data exploration:
 * hour impact on count in working and non-working days
-![alt text](https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/hour.png)
+<img src="https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/hour.png" width="900"></img>
 * month and season impact on count
-![alt text](https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/month_season.png)
+<img src="https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/month_season.png" width="900"></img>
 * year impact on count
-![alt text](https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/year_month.png)
+<img src="https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/year_month.png" width="900"></img>
 * temperature impact on count
-![alt text](https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/temp_atemp.png)
+<img src="https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/temp_atemp.png" width="900"></img>
 * humidity and wind speed impact on count
-![alt text](https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/humidity_wind_speed.png)
+<img src="https://github.com/PiotrSobczak/BikeSharingDemand-Kaggle-ML-competition/blob/master/plots/humidity_wind_speed.png" width="900"></img>
